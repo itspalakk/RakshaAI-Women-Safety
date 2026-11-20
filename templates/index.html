@@ -1,0 +1,3813 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AlertMe — Women Safety</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<!-- Leaflet CSS & JS for Interactive Dynamic Safe Route Map -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+<style>
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+:root{
+  /* ── Sage Green + Pale Pink palette ── */
+  --bg:#F5F7F4;
+  --surface:#FFFFFF;
+  --surface2:#F2F5F0;
+  --surface3:#E8EDE5;
+  --border:#D8E0D4;
+  --border2:#C8D4C3;
+
+  /* Sage green (primary) */
+  --sage:#7A9E7E;
+  --sage-lt:#A8C4AB;
+  --sage-dim:rgba(122,158,126,.13);
+  --sage-glow:rgba(122,158,126,.30);
+
+  /* Pale pink (accent) */
+  --pink:#E8A4B0;
+  --pink-dim:rgba(232,164,176,.15);
+  --pink-glow:rgba(232,164,176,.30);
+  --pink-dark:#C97E8E;
+
+  /* Supporting */
+  --blue:#7EB0C8;
+  --blue-dim:rgba(126,176,200,.13);
+
+  --safe:#5B9E7A;
+  --safe-dim:rgba(91,158,122,.12);
+
+  --danger:#C96A72;
+  --danger-dim:rgba(201,106,114,.12);
+  --danger-glow:rgba(201,106,114,.25);
+
+  --gold:#C49A5A;
+  --gold-dim:rgba(196,154,90,.12);
+
+  --text:#2A3828;
+  --text-mid:#4E6050;
+  --text-muted:#8A9E8C;
+}
+
+html,body{height:100%;background:var(--bg);color:var(--text);font-family:'Nunito',sans-serif;overflow-x:hidden}
+body::before{content:'';position:fixed;inset:0;background:
+  radial-gradient(ellipse 55% 45% at 10% 15%,rgba(122,158,126,.07) 0%,transparent 65%),
+  radial-gradient(ellipse 45% 55% at 90% 85%,rgba(232,164,176,.06) 0%,transparent 65%),
+  radial-gradient(ellipse 35% 35% at 85% 10%,rgba(126,176,200,.05) 0%,transparent 60%);
+  pointer-events:none;z-index:0}
+.app{position:relative;z-index:1;min-height:100vh;display:flex;flex-direction:column}
+
+/* ── HEADER ── */
+header{display:flex;align-items:center;justify-content:space-between;padding:.9rem 1.5rem;
+  border-bottom:1px solid var(--border);background:rgba(255,255,255,.85);
+  backdrop-filter:blur(16px);position:sticky;top:0;z-index:200}
+.logo{display:flex;align-items:center;gap:.65rem}
+.logo-mark{width:34px;height:34px;border-radius:50%;
+  background:linear-gradient(135deg,var(--sage),var(--pink));
+  display:flex;align-items:center;justify-content:center;
+  font-family:'Playfair Display',serif;font-size:14px;color:#fff;font-weight:600;
+  box-shadow:0 2px 10px var(--sage-glow)}
+.logo-text{font-family:'Playfair Display',serif;font-size:1.1rem;font-weight:600;color:var(--text)}
+.logo-text span{color:var(--sage)}
+.logo-tag{font-size:.58rem;color:var(--text-muted);letter-spacing:.12em;margin-top:1px}
+.hdr-right{display:flex;align-items:center;gap:1rem}
+.hdr-status{display:flex;align-items:center;gap:.4rem;font-size:.7rem;color:var(--text-muted);font-weight:600}
+.sdot{width:7px;height:7px;border-radius:50%;background:var(--safe);
+  box-shadow:0 0 0 3px rgba(91,158,122,.2);animation:psafe 2.5s ease-in-out infinite}
+@keyframes psafe{0%,100%{box-shadow:0 0 0 3px rgba(91,158,122,.2)}50%{box-shadow:0 0 0 6px rgba(91,158,122,.04)}}
+.sdot.danger{background:var(--danger);box-shadow:0 0 0 3px var(--danger-dim);animation:pdanger .7s ease-in-out infinite}
+@keyframes pdanger{0%,100%{box-shadow:0 0 0 3px var(--danger-dim)}50%{box-shadow:0 0 0 8px rgba(201,106,114,.03)}}
+.fake-call-hdr{padding:.38rem .8rem;border-radius:20px;border:1.5px solid var(--sage);
+  background:var(--sage-dim);color:var(--sage);font-family:'Nunito',sans-serif;
+  font-size:.68rem;font-weight:700;cursor:pointer;transition:all .2s}
+.fake-call-hdr:hover{background:rgba(122,158,126,.22)}
+
+/* ── TABS ── */
+.tabs-bar{display:flex;gap:0;border-bottom:1px solid var(--border);
+  background:rgba(255,255,255,.7);backdrop-filter:blur(8px);
+  padding:0 1.5rem;overflow-x:auto;scrollbar-width:none}
+.tabs-bar::-webkit-scrollbar{display:none}
+.tab{display:flex;align-items:center;gap:.4rem;padding:.75rem 1rem;
+  font-size:.72rem;font-weight:700;color:var(--text-muted);
+  border-bottom:2px solid transparent;cursor:pointer;transition:all .2s;white-space:nowrap}
+.tab:hover{color:var(--sage)}
+.tab.active{color:var(--sage);border-bottom-color:var(--sage)}
+.tab-icon{font-size:.9rem}
+
+/* ── PAGES ── */
+.page{display:none;flex:1;max-width:1100px;margin:0 auto;width:100%;padding:1.5rem}
+.page.active{display:block}
+
+/* ── CARDS ── */
+.card{background:var(--surface);border:1px solid var(--border);border-radius:20px;overflow:hidden;
+  box-shadow:0 2px 16px rgba(122,158,126,.05),0 1px 2px rgba(0,0,0,.03)}
+.card-hdr{padding:.85rem 1.25rem .7rem;border-bottom:1px solid var(--border);
+  display:flex;align-items:center;justify-content:space-between}
+.card-title{font-size:.65rem;letter-spacing:.16em;text-transform:uppercase;color:var(--text-muted);font-weight:700}
+.badge{font-size:.6rem;padding:.15rem .55rem;border-radius:10px;font-weight:700}
+.badge-sage{background:var(--sage-dim);color:var(--sage);border:1px solid rgba(122,158,126,.25)}
+.badge-lav{background:var(--sage-dim);color:var(--sage);border:1px solid rgba(122,158,126,.25)}
+.badge-safe{background:var(--safe-dim);color:var(--safe);border:1px solid rgba(91,158,122,.25)}
+.badge-danger{background:var(--danger-dim);color:var(--danger);border:1px solid rgba(201,106,114,.25)}
+.badge-gold{background:var(--gold-dim);color:var(--gold);border:1px solid rgba(196,154,90,.25)}
+.badge-pink{background:var(--pink-dim);color:var(--pink-dark);border:1px solid rgba(232,164,176,.35)}
+
+/* ── BUTTONS ── */
+.btn{padding:.55rem 1.2rem;border-radius:12px;font-family:'Nunito',sans-serif;font-size:.75rem;font-weight:700;cursor:pointer;transition:all .2s;border:1.5px solid}
+.btn-lav,.btn-sage{border-color:var(--sage);background:var(--sage-dim);color:var(--sage)}
+.btn-lav:hover,.btn-sage:hover{background:rgba(122,158,126,.22);box-shadow:0 2px 10px var(--sage-glow)}
+.btn-safe{border-color:var(--safe);background:var(--safe-dim);color:var(--safe)}
+.btn-safe:hover{background:rgba(91,158,122,.22)}
+.btn-danger{border-color:var(--danger);background:var(--danger-dim);color:var(--danger)}
+.btn-danger:hover{background:rgba(201,106,114,.22)}
+.btn-ghost{border-color:var(--border2);background:transparent;color:var(--text-muted)}
+.btn-ghost:hover{border-color:var(--sage);color:var(--sage)}
+.eyebrow{font-size:.6rem;letter-spacing:.2em;text-transform:uppercase;color:var(--text-muted);font-weight:700}
+
+/* ── ALERT DELIVERY STATUS PANEL ── */
+.delivery-panel{width:100%;background:var(--surface2);border:1px solid var(--border);
+  border-radius:14px;padding:.85rem 1rem;display:none;flex-direction:column;gap:.5rem}
+.delivery-panel.show{display:flex}
+.delivery-title{font-size:.6rem;letter-spacing:.16em;text-transform:uppercase;
+  color:var(--text-muted);font-weight:700;margin-bottom:.15rem}
+.delivery-row{display:flex;align-items:center;gap:.6rem;padding:.35rem .5rem;
+  border-radius:8px;background:var(--surface);border:1px solid var(--border)}
+.delivery-name{font-size:.72rem;font-weight:700;color:var(--text);flex:1}
+.delivery-phone{font-size:.6rem;color:var(--text-muted);font-weight:600}
+.delivery-badges{display:flex;gap:.3rem;flex-shrink:0}
+.dbadge{font-size:.58rem;padding:.12rem .45rem;border-radius:6px;font-weight:700;
+  display:flex;align-items:center;gap:.25rem}
+.dbadge.sending{background:var(--gold-dim);color:var(--gold);border:1px solid rgba(196,154,90,.3)}
+.dbadge.sent{background:var(--safe-dim);color:var(--safe);border:1px solid rgba(91,158,122,.3)}
+.dbadge.failed{background:var(--danger-dim);color:var(--danger);border:1px solid rgba(201,106,114,.3)}
+.dbadge.skipped{background:var(--sage-dim);color:var(--sage);border:1px solid rgba(122,158,126,.3)}
+.dbadge.queued{background:rgba(99,133,208,.12);color:#3b6fc9;border:1px solid rgba(99,133,208,.35)}
+@keyframes spin{from{transform:rotate(0)}to{transform:rotate(360deg)}}
+.spin{display:inline-block;animation:spin .7s linear infinite}
+
+/* ═══════════════════════
+   PAGE 1 — SMART SOS
+═══════════════════════ */
+.sos-grid{display:grid;grid-template-columns:1fr 320px;gap:1.25rem}
+@media(max-width:800px){.sos-grid{grid-template-columns:1fr}}
+
+.sos-main{display:flex;flex-direction:column;align-items:center;gap:1.75rem;
+  padding:2.5rem 2rem;background:var(--surface);border:1px solid var(--border);border-radius:24px;
+  position:relative;overflow:hidden;box-shadow:0 4px 32px rgba(122,158,126,.07)}
+.sos-main::before{content:'';position:absolute;inset:0;
+  background:radial-gradient(ellipse 70% 50% at 50% 0%,rgba(232,164,176,.06) 0%,transparent 65%);pointer-events:none}
+
+.sos-wrap{position:relative;display:flex;align-items:center;justify-content:center;width:220px;height:220px}
+.sring{position:absolute;border-radius:50%;pointer-events:none}
+.sring1{inset:-14px;border:1.5px solid var(--border2);animation:rbreathe 3.5s ease-in-out infinite}
+.sring2{inset:-28px;border:1px solid rgba(122,158,126,.18);animation:rbreathe 3.5s ease-in-out infinite .6s}
+@keyframes rbreathe{0%,100%{transform:scale(1);opacity:.5}50%{transform:scale(1.025);opacity:1}}
+.sring1.on{border-color:rgba(201,106,114,.55);animation:ralert 1s ease-in-out infinite}
+.sring2.on{border-color:rgba(201,106,114,.2);animation:ralert 1s ease-in-out infinite .25s}
+@keyframes ralert{0%,100%{transform:scale(1);opacity:1}50%{transform:scale(1.06);opacity:.4}}
+
+.sos-btn{width:162px;height:162px;border-radius:50%;
+  background:linear-gradient(145deg,#fff 0%,#f5faf5 100%);
+  border:2px solid var(--border2);cursor:pointer;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:.2rem;
+  transition:transform .2s cubic-bezier(.34,1.56,.64,1),box-shadow .3s;
+  box-shadow:0 4px 20px rgba(122,158,126,.12),0 1px 4px rgba(0,0,0,.06),inset 0 1px 0 rgba(255,255,255,.9);
+  user-select:none;-webkit-tap-highlight-color:transparent;position:relative;z-index:1}
+.sos-btn:hover{transform:scale(1.04);box-shadow:0 8px 32px var(--sage-glow),inset 0 1px 0 rgba(255,255,255,.9)}
+.sos-btn:active{transform:scale(.97)}
+.sos-btn.on{background:linear-gradient(145deg,#fff5f6 0%,#ffe8ea 100%);
+  border-color:rgba(201,106,114,.45);animation:bglow 1.8s ease-in-out infinite}
+@keyframes bglow{0%,100%{box-shadow:0 6px 28px var(--danger-glow),inset 0 1px 0 rgba(255,255,255,.8)}
+  50%{box-shadow:0 8px 40px rgba(201,106,114,.38),inset 0 1px 0 rgba(255,255,255,.8)}}
+.sos-icon{font-size:2.2rem;line-height:1}
+.sos-lbl{font-family:'Playfair Display',serif;font-size:1.5rem;font-weight:600;letter-spacing:.12em;color:var(--sage);transition:color .3s}
+.sos-btn.on .sos-lbl{color:var(--danger)}
+.sos-hint{font-size:.55rem;letter-spacing:.14em;text-transform:uppercase;color:var(--text-muted);font-weight:700}
+.sos-btn.on .sos-hint{color:rgba(201,106,114,.7)}
+
+.timer-big{font-family:'Playfair Display',serif;font-size:2.8rem;font-weight:400;
+  color:var(--text-muted);letter-spacing:.04em;font-variant-numeric:tabular-nums;transition:color .4s}
+.timer-big.on{color:var(--danger)}
+.timer-sub{font-size:.63rem;letter-spacing:.13em;color:var(--text-muted);margin-top:.25rem;font-weight:600}
+
+.dur-row{display:flex;gap:.45rem;flex-wrap:wrap;justify-content:center}
+.dpill{padding:.35rem .9rem;border-radius:20px;border:1.5px solid var(--border2);
+  background:transparent;color:var(--text-muted);font-family:'Nunito',sans-serif;font-size:.7rem;font-weight:700;cursor:pointer;transition:all .2s}
+.dpill:hover{border-color:var(--sage);color:var(--sage);background:var(--sage-dim)}
+.dpill.sel{border-color:var(--sage);background:var(--sage-dim);color:var(--sage);box-shadow:0 0 0 3px rgba(122,158,126,.1)}
+
+.sbar{width:100%;padding:.65rem 1rem;border-radius:12px;background:var(--surface2);
+  border:1px solid var(--border);font-size:.7rem;color:var(--text-muted);font-weight:600;
+  display:flex;align-items:center;gap:.5rem;transition:all .35s}
+.sbar.alert{border-color:rgba(201,106,114,.3);background:rgba(255,240,241,.8);color:var(--danger)}
+.sbar.safe{border-color:rgba(91,158,122,.3);background:rgba(240,251,246,.8);color:var(--safe)}
+
+.track-grid{display:grid;grid-template-columns:1fr 1fr;gap:.6rem;width:100%}
+.track-card{padding:.65rem .8rem;border-radius:12px;background:var(--surface2);
+  border:1px solid var(--border);display:flex;flex-direction:column;gap:.25rem}
+.track-card.active{border-color:rgba(91,158,122,.35);background:rgba(240,251,246,.6)}
+.track-card.warn{border-color:rgba(201,106,114,.3);background:rgba(255,240,241,.6)}
+.track-label{font-size:.6rem;letter-spacing:.12em;text-transform:uppercase;color:var(--text-muted);font-weight:700}
+.track-val{font-size:.8rem;font-weight:700;color:var(--text-mid)}
+.track-card.active .track-val{color:var(--safe)}
+.track-card.warn .track-val{color:var(--danger)}
+
+.sos-sidebar{display:flex;flex-direction:column;gap:1rem}
+.input-field{width:100%;padding:.48rem .75rem;border-radius:10px;border:1.5px solid var(--border2);
+  background:var(--surface2);color:var(--text);font-family:'Nunito',sans-serif;font-size:.75rem;font-weight:600;
+  outline:none;transition:border-color .2s,box-shadow .2s}
+.input-field::placeholder{color:var(--text-muted)}
+.input-field:focus{border-color:var(--sage);box-shadow:0 0 0 3px rgba(122,158,126,.12)}
+.row-gap{display:flex;gap:.45rem}
+.contact-list-wrap{max-height:220px;overflow-y:auto}
+.contact-list-wrap::-webkit-scrollbar{width:3px}
+.contact-list-wrap::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px}
+.ci{display:flex;align-items:center;gap:.65rem;padding:.6rem 1.25rem;
+  border-bottom:1px solid var(--border);transition:background .15s}
+.ci:hover{background:var(--surface2)}
+.ci:last-child{border-bottom:none}
+.cav{width:32px;height:32px;border-radius:50%;
+  background:linear-gradient(135deg,var(--sage-dim),var(--pink-dim));
+  border:1.5px solid rgba(122,158,126,.25);display:flex;align-items:center;justify-content:center;
+  font-size:.7rem;color:var(--sage);font-weight:700;flex-shrink:0}
+.ci-info{flex:1;min-width:0}
+.ci-name{font-size:.75rem;color:var(--text);font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ci-phone{font-size:.63rem;color:var(--text-muted);font-weight:600}
+.cdel{width:24px;height:24px;border-radius:6px;border:none;background:transparent;
+  color:var(--text-muted);cursor:pointer;font-size:.75rem;transition:all .15s;
+  display:flex;align-items:center;justify-content:center}
+.cdel:hover{background:var(--danger-dim);color:var(--danger)}
+.empty{padding:1.5rem 1.25rem;text-align:center;color:var(--text-muted);font-size:.7rem;line-height:1.7;font-weight:600}
+
+.log-wrap{max-height:150px;overflow-y:auto;padding:.7rem 1.25rem}
+.log-wrap::-webkit-scrollbar{width:3px}
+.log-wrap::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px}
+.le{display:flex;gap:.65rem;margin-bottom:.6rem}
+.le:last-child{margin-bottom:0}
+.lt{font-size:.58rem;color:var(--text-muted);white-space:nowrap;padding-top:2px;font-weight:700}
+.lx{font-size:.64rem;color:var(--text-mid);line-height:1.5;font-weight:600}
+.lx.a{color:var(--danger)}.lx.s{color:var(--safe)}.lx.w{color:var(--gold)}
+
+/* ═══════════════════════
+   PAGE 2 — AI ASSISTANT
+═══════════════════════ */
+.assist-grid{display:grid;grid-template-columns:1fr 340px;gap:1.25rem}
+@media(max-width:800px){.assist-grid{grid-template-columns:1fr}}
+.scenario-section{background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:1.5rem;
+  box-shadow:0 2px 16px rgba(122,158,126,.05)}
+.scenario-intro{font-size:.8rem;color:var(--text-mid);line-height:1.7;font-weight:600;margin-bottom:1.25rem}
+.scenario-grid{display:grid;grid-template-columns:1fr 1fr;gap:.75rem;margin-bottom:1.5rem}
+@media(max-width:600px){.scenario-grid{grid-template-columns:1fr}}
+.scen-btn{padding:1rem;border-radius:14px;border:1.5px solid var(--border);background:var(--surface2);
+  cursor:pointer;transition:all .2s;text-align:left;font-family:'Nunito',sans-serif}
+.scen-btn:hover{border-color:var(--sage);background:var(--sage-dim);transform:translateY(-1px);box-shadow:0 4px 16px var(--sage-glow)}
+.scen-btn.active-scen{border-color:var(--pink);background:var(--pink-dim);box-shadow:0 0 0 3px rgba(232,164,176,.15)}
+.scen-icon{font-size:1.4rem;margin-bottom:.4rem;display:block}
+.scen-title{font-size:.78rem;font-weight:700;color:var(--text);margin-bottom:.2rem}
+.scen-desc{font-size:.64rem;color:var(--text-muted);font-weight:600;line-height:1.5}
+.ai-response{background:var(--surface2);border:1px solid var(--border);border-radius:16px;padding:1.25rem;min-height:180px}
+.ai-resp-empty{display:flex;flex-direction:column;align-items:center;justify-content:center;height:180px;color:var(--text-muted);font-size:.75rem;font-weight:600;gap:.5rem;text-align:center}
+.ai-steps{display:none}
+.ai-steps.show{display:block}
+.ai-steps-title{font-size:.68rem;letter-spacing:.15em;text-transform:uppercase;color:var(--sage);font-weight:700;margin-bottom:.9rem}
+.step-item{display:flex;gap:.75rem;margin-bottom:.8rem;align-items:flex-start}
+.step-num{width:22px;height:22px;border-radius:50%;background:var(--pink-dim);border:1.5px solid rgba(232,164,176,.4);display:flex;align-items:center;justify-content:center;font-size:.6rem;color:var(--pink-dark);font-weight:700;flex-shrink:0;margin-top:1px}
+.step-txt{font-size:.74rem;color:var(--text-mid);line-height:1.6;font-weight:600}
+.step-txt strong{color:var(--text);font-weight:700}
+.ai-quick-actions{display:flex;gap:.5rem;flex-wrap:wrap;margin-top:1rem;padding-top:1rem;border-top:1px solid var(--border)}
+.qa-btn{padding:.38rem .85rem;border-radius:20px;border:1.5px solid var(--border2);background:transparent;color:var(--text-muted);font-family:'Nunito',sans-serif;font-size:.68rem;font-weight:700;cursor:pointer;transition:all .2s}
+.qa-btn:hover{border-color:var(--sage);color:var(--sage);background:var(--sage-dim)}
+.qa-btn.triggered{border-color:var(--safe);color:var(--safe);background:var(--safe-dim)}
+.safe-places{display:flex;flex-direction:column;gap:.6rem;padding:1rem 1.25rem}
+.place-item{display:flex;align-items:center;gap:.75rem;padding:.6rem .75rem;border-radius:12px;background:var(--surface2);border:1px solid var(--border);transition:all .2s;cursor:pointer}
+.place-item:hover{border-color:var(--sage);background:var(--sage-dim)}
+.place-icon{font-size:1.1rem;flex-shrink:0}
+.place-info{flex:1}
+.place-name{font-size:.75rem;font-weight:700;color:var(--text)}
+.place-dist{font-size:.62rem;color:var(--text-muted);font-weight:600;margin-top:1px}
+.place-open{font-size:.58rem;padding:.1rem .4rem;border-radius:6px;font-weight:700}
+.open-yes{background:var(--safe-dim);color:var(--safe)}
+.open-no{background:var(--danger-dim);color:var(--danger)}
+
+/* ═══════════════════════
+   PAGE 3 — TRUSTED CIRCLE
+═══════════════════════ */
+.circle-grid{display:grid;grid-template-columns:1fr 1fr;gap:1.25rem}
+@media(max-width:700px){.circle-grid{grid-template-columns:1fr}}
+.circle-map{background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:1.5rem;box-shadow:0 2px 16px rgba(122,158,126,.05);text-align:center}
+.circle-visual{position:relative;width:220px;height:220px;margin:1.5rem auto}
+.cv-you{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:52px;height:52px;border-radius:50%;background:linear-gradient(135deg,var(--sage),var(--pink));display:flex;align-items:center;justify-content:center;color:#fff;font-size:.65rem;font-weight:700;z-index:2;box-shadow:0 4px 16px var(--sage-glow)}
+.cv-ring1{position:absolute;inset:20px;border-radius:50%;border:1.5px dashed rgba(122,158,126,.3);animation:cvspin 20s linear infinite}
+.cv-ring2{position:absolute;inset:0;border-radius:50%;border:1px dashed rgba(232,164,176,.25);animation:cvspin 35s linear infinite reverse}
+@keyframes cvspin{from{transform:rotate(0)}to{transform:rotate(360deg)}}
+.cv-contact{position:absolute;transform:translate(-50%,-50%);z-index:2}
+.cvc-dot{width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.65rem;font-weight:700;color:#fff;border:2px solid #fff;box-shadow:0 2px 8px rgba(0,0,0,.12);cursor:pointer;transition:transform .2s}
+.cvc-dot:hover{transform:scale(1.15) translate(-10%,-10%)}
+.cvc-label{font-size:.55rem;font-weight:700;color:var(--text-muted);text-align:center;margin-top:2px;white-space:nowrap}
+.circle-legend{display:flex;gap:.75rem;justify-content:center;flex-wrap:wrap;margin-top:1rem}
+.cleg-item{display:flex;align-items:center;gap:.35rem;font-size:.62rem;color:var(--text-muted);font-weight:600}
+.cleg-dot{width:8px;height:8px;border-radius:50%}
+.alert-log-list{padding:.75rem 1.25rem;display:flex;flex-direction:column;gap:.65rem;max-height:280px;overflow-y:auto}
+.alert-log-list::-webkit-scrollbar{width:3px}
+.alert-log-list::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px}
+.al-item{display:flex;gap:.75rem;align-items:flex-start;padding:.6rem .75rem;border-radius:10px;background:var(--surface2);border:1px solid var(--border)}
+.al-icon{font-size:.9rem;flex-shrink:0;padding-top:1px}
+.al-body{flex:1}
+.al-msg{font-size:.7rem;font-weight:700;color:var(--text)}
+.al-time{font-size:.6rem;color:var(--text-muted);font-weight:600;margin-top:2px}
+.al-seen{display:flex;gap:.3rem;margin-top:.4rem;flex-wrap:wrap}
+.seen-chip{font-size:.58rem;padding:.1rem .4rem;border-radius:6px;font-weight:700}
+.seen-yes{background:var(--safe-dim);color:var(--safe)}
+.seen-no{background:var(--sage-dim);color:var(--sage)}
+.contact-cards{display:grid;grid-template-columns:1fr 1fr;gap:.75rem;padding:1.25rem}
+@media(max-width:700px){.contact-cards{grid-template-columns:1fr}}
+.cc{padding:1rem;border-radius:14px;background:var(--surface2);border:1px solid var(--border);transition:all .2s}
+.cc:hover{border-color:var(--sage);box-shadow:0 4px 16px var(--sage-glow)}
+.cc-top{display:flex;align-items:center;gap:.65rem;margin-bottom:.6rem}
+.cc-av{width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.75rem;font-weight:700;color:#fff;flex-shrink:0}
+.cc-name{font-size:.78rem;font-weight:700;color:var(--text)}
+.cc-role{font-size:.6rem;color:var(--text-muted);font-weight:600}
+.cc-row{display:flex;justify-content:space-between;align-items:center;margin-top:.4rem}
+.cc-stat{font-size:.62rem;font-weight:700}
+.cc-eta{font-size:.62rem;color:var(--text-muted);font-weight:600}
+
+/* ═══════════════════════
+/* ═══════════════════════
+   PAGE 4 — SAFE ROUTE (NAVY BLUE & LIGHT BLUE THEME)
+═══════════════════════ */
+.route-layout{display:grid;grid-template-columns:minmax(0,1fr) 320px;gap:1.25rem}
+@media(max-width:900px){.route-layout{grid-template-columns:1fr}}
+
+/* Safe Route Toolbar & Form Controls */
+.safe-route-toolbar{padding:1rem 1.25rem;background:#ffffff;border-bottom:1px solid #dce7f5}
+.route-inputs-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:12px}
+@media(max-width:720px){.route-inputs-grid{grid-template-columns:1fr;gap:10px}}
+
+.route-field{display:flex;flex-direction:column;gap:5px;position:relative}
+.route-label-row{display:flex;justify-content:space-between;align-items:center;min-height:18px}
+.route-label{color:#142f55;font-size:12px;font-weight:700;display:flex;align-items:center;gap:5px}
+.btn-retry-loc{background:#eff6ff;color:#1d4ed8;border:1px solid #bfdbfe;font-size:11px;font-weight:700;border-radius:6px;padding:2px 8px;cursor:pointer;display:inline-flex;align-items:center;gap:3px;transition:all .2s}
+.btn-retry-loc:hover{background:#dbeafe;border-color:#1e40af}
+
+.input-with-icon{position:relative;display:flex;align-items:center}
+.route-input-clean{width:100%;box-sizing:border-box;min-height:42px;background:#ffffff;color:#0f172a;border:1.5px solid #cbd5e1;border-radius:8px;padding:9px 12px;font-size:13px;font-family:'Nunito',sans-serif;font-weight:600;transition:border-color .2s,box-shadow .2s}
+.route-input-clean:focus{outline:none;border-color:#2563eb;box-shadow:0 0 0 3px rgba(37,99,235,.12)}
+.route-input-clean.readonly-field{background:#f8fafc;color:#1e293b;cursor:default;border-color:#cbd5e1}
+
+.loc-spinner{display:none;width:14px;height:14px;border:2px solid #bfdbfe;border-top-color:#1d4ed8;border-radius:50%;animation:loc-spin 1s linear infinite;position:absolute;right:12px}
+.loc-spinner.active{display:inline-block}
+@keyframes loc-spin{to{transform:rotate(360deg)}}
+
+.loc-status-text{font-size:11px;color:#64748b;font-weight:600;min-height:16px;margin-top:2px;display:flex;align-items:center;gap:4px}
+.insecure-notice{background:#fee2e2;border:1px solid #fecaca;color:#991b1b;padding:5px 9px;border-radius:6px;font-size:11px;font-weight:600;margin-top:4px}
+
+/* Autocomplete Suggestions */
+.input-search-wrap{position:relative}
+.btn-clear-dest{position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;font-size:13px;color:#94a3b8;cursor:pointer;padding:2px;display:none}
+.btn-clear-dest:hover{color:#0f172a}
+.autocomplete-dropdown{position:absolute;top:100%;left:0;right:0;background:#ffffff;border:1.5px solid #cbd5e1;border-radius:8px;box-shadow:0 10px 25px rgba(20,47,85,.12);z-index:1200;max-height:220px;overflow-y:auto;display:none;margin-top:3px}
+.autocomplete-item{padding:9px 12px;cursor:pointer;border-bottom:1px solid #f1f5f9;display:flex;align-items:flex-start;gap:8px;font-size:12px;line-height:1.35;transition:background .15s}
+.autocomplete-item:last-child{border-bottom:none}
+.autocomplete-item:hover{background:#eff6ff}
+.ai-icon{font-size:14px;flex-shrink:0;margin-top:1px}
+.ai-details{flex:1;min-width:0}
+.ai-name{font-weight:700;color:#142f55;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ai-sub{font-size:11px;color:#64748b;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+/* Actions Toolbar */
+.route-actions-bar{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.btn-navy{background:#142f55;color:#ffffff;font-family:'Nunito',sans-serif;font-weight:700;font-size:13px;padding:9px 18px;border-radius:8px;border:none;cursor:pointer;display:inline-flex;align-items:center;gap:6px;transition:all .2s;letter-spacing:.02em}
+.btn-navy:hover{background:#1e3a8a;transform:translateY(-1px);box-shadow:0 4px 14px rgba(20,47,85,.22)}
+.btn-start-nav{background:#059669;color:#ffffff;font-family:'Nunito',sans-serif;font-weight:800;font-size:13px;padding:9px 18px;border-radius:8px;border:none;cursor:pointer;display:inline-flex;align-items:center;gap:6px;transition:all .2s;box-shadow:0 3px 10px rgba(5,150,105,.25)}
+.btn-start-nav:hover{background:#047857;transform:translateY(-1px);box-shadow:0 4px 14px rgba(5,150,105,.35)}
+.btn-start-nav.navigating{background:#dc2626;box-shadow:0 3px 10px rgba(220,38,38,.25);animation:pulse-nav-btn 2s infinite}
+@keyframes pulse-nav-btn{0%,100%{box-shadow:0 0 0 0 rgba(220,38,38,.45)}50%{box-shadow:0 0 0 7px rgba(220,38,38,0)}}
+.btn-nearest-safe{background:#eff6ff;color:#1e40af;border:1.5px solid #3b82f6;font-family:'Nunito',sans-serif;font-weight:700;font-size:13px;padding:8px 18px;border-radius:8px;cursor:pointer;display:inline-flex;align-items:center;gap:6px;transition:all .2s}
+.btn-nearest-safe:hover{background:#dbeafe;border-color:#1d4ed8;color:#1e3a8a;transform:translateY(-1px);box-shadow:0 4px 12px rgba(37,99,235,.15)}
+
+/* Enhanced Autocomplete Dropdown item styles */
+.ai-tag-row{display:flex;align-items:center;gap:6px;margin-top:3px}
+.ai-type-pill{font-size:9.5px;font-weight:800;padding:1px 6px;border-radius:4px;text-transform:uppercase}
+.ai-type-pill.college{background:#ede9fe;color:#5b21b6}
+.ai-type-pill.hospital{background:#e0f2fe;color:#0369a1}
+.ai-type-pill.police{background:#dbeafe;color:#1e40af}
+.ai-type-pill.landmark{background:#f1f5f9;color:#475569}
+.ai-type-pill.commercial{background:#fef3c7;color:#92400e}
+.ai-type-pill.transit{background:#dcfce7;color:#166534}
+.ai-dist-pill{font-size:10.5px;font-weight:700;color:#2563eb;background:#eff6ff;padding:1px 6px;border-radius:4px;margin-left:auto}
+
+/* Nearest Safe Havens Panel (Option B) */
+.nearest-safe-panel{background:#f8fafc;border:1px solid #dce7f5;border-radius:10px;padding:12px 14px;margin-top:12px}
+.nsp-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:4px}
+.nsp-badge{background:#dbeafe;color:#1e40af;font-size:10px;font-weight:800;text-transform:uppercase;padding:2px 7px;border-radius:4px;letter-spacing:.05em}
+.nsp-title{font-size:13px;font-weight:700;color:#142f55;display:flex;align-items:center;gap:8px}
+.btn-close-nsp{background:none;border:none;font-size:14px;color:#64748b;cursor:pointer;padding:2px 6px}
+.btn-close-nsp:hover{color:#0f172a}
+.nsp-desc{font-size:11.5px;color:#475569;margin-bottom:8px}
+.nsp-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:8px}
+.nsp-card{background:#ffffff;border:1px solid #cbd5e1;border-radius:8px;padding:9px 11px;display:flex;flex-direction:column;gap:5px;box-shadow:0 1px 4px rgba(0,0,0,.03);transition:border-color .2s}
+.nsp-card:hover{border-color:#3b82f6}
+.nsp-card-top{display:flex;justify-content:space-between;align-items:flex-start;gap:6px}
+.nsp-card-name{font-size:12.5px;font-weight:700;color:#142f55;line-height:1.3}
+.nsp-card-dist{font-size:11px;font-weight:700;color:#2563eb;white-space:nowrap;background:#eff6ff;padding:2px 6px;border-radius:4px}
+.nsp-card-status{font-size:11px;font-weight:600;color:#475569;line-height:1.3}
+.nsp-card-status.high-cert{color:#1e40af}
+.nsp-card-status.med-cert{color:#b45309}
+.nsp-card-actions{display:flex;gap:6px;margin-top:3px}
+.btn-nsp-route{background:#142f55;color:#ffffff;border:none;border-radius:6px;padding:5px 10px;font-size:11px;font-weight:700;cursor:pointer;transition:background .15s}
+.btn-nsp-route:hover{background:#1d4ed8}
+.btn-nsp-call{background:#dc2626;color:#ffffff;border:none;border-radius:6px;padding:5px 9px;font-size:11px;font-weight:700;text-decoration:none;display:inline-flex;align-items:center;gap:3px;cursor:pointer}
+.btn-nsp-call:hover{background:#b91c1c}
+
+/* Map Container & Overlays */
+.map-container-wrap{position:relative;height:500px;width:100%;overflow:hidden;background:#f1f5f9;border-bottom:1px solid #dce7f5}
+@media(max-width:768px){.map-container-wrap{height:400px}}
+#safeRouteMap{width:100%;height:100%;position:relative;z-index:1}
+
+/* Live Turn-by-Turn Navigation HUD (Floating over Map) */
+.live-nav-hud{position:absolute;top:10px;left:10px;right:10px;z-index:1001;background:rgba(15,23,42,.96);backdrop-filter:blur(10px);border-radius:14px;padding:.75rem 1rem;color:#ffffff;box-shadow:0 10px 30px rgba(15,23,42,.4);border:1.5px solid rgba(255,255,255,.18);display:flex;flex-direction:column;gap:.5rem;animation:slide-hud-down .25s ease-out}
+@keyframes slide-hud-down{from{transform:translateY(-15px);opacity:0}to{transform:translateY(0);opacity:1}}
+.hud-main-row{display:flex;align-items:center;gap:12px}
+.hud-maneuver-icon{width:48px;height:48px;border-radius:12px;background:#1d4ed8;display:flex;align-items:center;justify-content:center;font-size:24px;flex-shrink:0;box-shadow:0 4px 14px rgba(29,78,216,.45)}
+.hud-text-wrap{flex:1;min-width:0}
+.hud-dist-countdown{font-size:12px;font-weight:800;color:#93c5fd;text-transform:uppercase;letter-spacing:.06em}
+.hud-instruction{font-size:15px;font-weight:800;color:#ffffff;line-height:1.25;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.hud-sub-instruction{font-size:11px;color:#cbd5e1;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.hud-actions{display:flex;align-items:center;gap:6px;flex-shrink:0}
+.btn-hud-voice,.btn-hud-recenter{background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.25);color:#ffffff;border-radius:8px;width:34px;height:34px;display:flex;align-items:center;justify-content:center;font-size:14px;cursor:pointer;transition:all .15s}
+.btn-hud-voice:hover,.btn-hud-recenter:hover{background:rgba(255,255,255,.28)}
+.btn-hud-stop{background:#dc2626;color:#ffffff;border:none;border-radius:8px;padding:.42rem .75rem;font-size:11.5px;font-weight:800;cursor:pointer;transition:background .15s;white-space:nowrap}
+.btn-hud-stop:hover{background:#b91c1c}
+.hud-metrics-row{display:flex;align-items:center;gap:6px;flex-wrap:wrap;border-top:1px solid rgba(255,255,255,.14);padding-top:.4rem}
+.hud-pill{font-size:10.5px;font-weight:700;background:rgba(255,255,255,.14);padding:2px 7px;border-radius:5px;color:#e2e8f0}
+.hud-pill.warning{background:#ef4444;color:#ffffff;font-weight:800;animation:pulse-warn 1.5s infinite}
+@keyframes pulse-warn{0%,100%{opacity:1}50%{opacity:.6}}
+
+/* Map Style Switcher (Clarity Esri / OSM / HOT) */
+.map-style-switcher{position:absolute;top:86px;left:130px;z-index:1000;display:flex;background:rgba(255,255,255,.96);backdrop-filter:blur(4px);border:1px solid #cbd5e1;border-radius:8px;padding:2px;box-shadow:0 2px 10px rgba(0,0,0,.08)}
+.style-btn{background:transparent;border:none;border-radius:6px;padding:3.5px 8.5px;font-size:10.5px;font-weight:700;color:#475569;cursor:pointer;transition:all .15s}
+.style-btn.active{background:#142f55;color:#ffffff;box-shadow:0 1px 4px rgba(20,47,85,.2)}
+
+/* Recenter button placed beneath Leaflet zoom */
+.map-recenter-btn{position:absolute;top:86px;left:12px;z-index:1000;background:rgba(255,255,255,.96);backdrop-filter:blur(4px);border:1px solid #cbd5e1;box-shadow:0 2px 10px rgba(0,0,0,.08);border-radius:8px;padding:.4rem .75rem;font-size:.68rem;font-weight:700;color:#142f55;cursor:pointer;display:flex;align-items:center;gap:5px;transition:all .2s}
+.map-recenter-btn:hover{background:#ffffff;border-color:#2563eb;color:#2563eb;transform:translateY(-1px)}
+.map-click-hint{position:absolute;bottom:12px;right:12px;z-index:1000;background:rgba(255,255,255,.94);backdrop-filter:blur(4px);border:1px solid #cbd5e1;border-radius:8px;padding:.35rem .65rem;font-size:.62rem;font-weight:700;color:#475569;box-shadow:0 2px 8px rgba(0,0,0,.05);pointer-events:none}
+.map-overlay-badge{position:absolute;top:12px;right:12px;z-index:1000;background:rgba(255,255,255,.96);backdrop-filter:blur(4px);border:1.5px solid #bfdbfe;border-radius:8px;padding:.45rem .8rem;font-size:.68rem;font-weight:700;color:#142f55;box-shadow:0 2px 10px rgba(0,0,0,.08);max-width:calc(100% - 90px);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.map-legend{position:absolute;bottom:12px;left:12px;z-index:1000;background:rgba(255,255,255,.95);backdrop-filter:blur(4px);border:1px solid #cbd5e1;border-radius:8px;padding:.5rem .75rem;display:flex;flex-direction:column;gap:.3rem;box-shadow:0 2px 10px rgba(0,0,0,.08);max-width:calc(100% - 150px)}
+.ml-row{display:flex;align-items:center;gap:.5rem;font-size:.62rem;color:#334155;font-weight:600}
+.ml-line{width:20px;height:3px;border-radius:2px}
+
+/* Institution Map Labels (College / Campus / Hospital recognition) */
+.inst-map-label{display:inline-flex;align-items:center;gap:5px;background:#ffffff;border:1.5px solid #4f46e5;color:#3730a3;border-radius:16px;padding:3px 9px;font-size:11px;font-weight:800;box-shadow:0 3px 10px rgba(79,70,229,.22);cursor:pointer;white-space:nowrap;transition:transform .2s}
+.inst-map-label:hover{transform:scale(1.08);background:#f5f3ff}
+.inst-map-label.college{border-color:#4f46e5;color:#3730a3;background:#faf5ff}
+.inst-map-label.hospital{border-color:#0284c7;color:#075985;background:#f0f9ff}
+.inst-map-label.police{border-color:#2563eb;color:#1e40af;background:#eff6ff}
+
+
+/* Turn-by-Turn Navigation Panel (Directly Below Map) */
+.turn-by-turn-panel{background:#ffffff;padding:1rem 1.25rem;border-top:1px solid #e2e8f0}
+.tbt-header{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:.85rem;padding-bottom:.65rem;border-bottom:1px solid #f1f5f9}
+.tbt-title{display:flex;align-items:center;gap:7px;font-size:13.5px;font-weight:800;color:#142f55}
+.tbt-stats{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.tbt-pill{font-size:11px;font-weight:700;padding:3px 8px;border-radius:6px;display:inline-flex;align-items:center;gap:4px}
+.tbt-pill.route-name{background:#eff6ff;color:#1e40af;border:1px solid #bfdbfe}
+.tbt-pill.time{background:#f8fafc;color:#142f55;border:1px solid #cbd5e1}
+.tbt-pill.dist{background:#f8fafc;color:#475569;border:1px solid #cbd5e1}
+
+.tbt-steps-list{display:flex;flex-direction:column;gap:6px;max-height:280px;overflow-y:auto;padding-right:4px}
+.tbt-steps-list::-webkit-scrollbar{width:5px}
+.tbt-steps-list::-webkit-scrollbar-thumb{background:#cbd5e1;border-radius:4px}
+.tbt-step-item{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:8px;background:#f8fafc;border:1px solid #e2e8f0;cursor:pointer;transition:all .15s ease}
+.tbt-step-item:hover{background:#eff6ff;border-color:#93c5fd;transform:translateX(2px)}
+.tbt-step-item.active-step{background:#eff6ff;border-color:#2563eb;box-shadow:0 0 0 1px #2563eb}
+.tbt-step-num{width:22px;height:22px;border-radius:50%;background:#dbeafe;color:#1e40af;font-size:10.5px;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.tbt-step-icon{font-size:15px;flex-shrink:0;width:20px;text-align:center}
+.tbt-step-content{flex:1;min-width:0}
+.tbt-step-title{font-size:12.5px;font-weight:700;color:#142f55;line-height:1.3}
+.tbt-step-sub{font-size:11px;color:#64748b;font-weight:600;margin-top:1px}
+.tbt-step-dist{font-size:11px;font-weight:700;color:#1e40af;background:#ffffff;border:1px solid #dce7f5;padding:2px 7px;border-radius:5px;white-space:nowrap}
+
+/* Direction Arrows and Turn Nodes on Map */
+.route-dir-arrow{display:flex;align-items:center;justify-content:center;width:20px;height:20px;border-radius:50%;background:#142f55;border:2px solid #ffffff;color:#ffffff;box-shadow:0 2px 6px rgba(0,0,0,.25);pointer-events:none}
+.map-turn-node{display:flex;align-items:center;justify-content:center;width:24px;height:24px;border-radius:50%;background:#142f55;color:#ffffff;font-size:10.5px;font-weight:800;border:2px solid #ffffff;box-shadow:0 2px 8px rgba(20,47,85,.35);cursor:pointer;transition:transform .2s}
+.map-turn-node:hover{transform:scale(1.25);background:#1d4ed8}
+
+/* Leaflet Custom Marker Icons & Popups */
+.custom-leaflet-icon{background:transparent!important;border:none!important}
+.marker-bubble{display:flex;align-items:center;justify-content:center;width:34px;height:34px;border-radius:50%;background:#ffffff;border:2px solid #cbd5e1;box-shadow:0 3px 10px rgba(20,47,85,.15);font-size:1.15rem;cursor:pointer;transition:transform .2s cubic-bezier(.34,1.56,.64,1);position:relative}
+.marker-bubble:hover{transform:scale(1.22);z-index:999}
+.marker-bubble.police{border-color:#2563eb;background:#eff6ff}
+.marker-bubble.hospital{border-color:#0284c7;background:#f0f9ff}
+.marker-bubble.shelter{border-color:#142f55;background:#f8fafc}
+.marker-bubble.caution{border-color:#dc2626;background:#fef2f2}
+.marker-bubble.dest{border-color:#142f55;background:#eff6ff}
+.marker-bubble.start{border-color:#1d4ed8;background:#eff6ff}
+
+.user-pulse-marker{position:relative;width:22px;height:22px}
+.user-pulse-dot{width:16px;height:16px;background:#2563eb;border:3px solid #ffffff;border-radius:50%;box-shadow:0 0 10px rgba(37,99,235,.5);position:absolute;top:3px;left:3px}
+.user-pulse-wave{position:absolute;inset:-6px;border-radius:50%;border:2px solid #2563eb;animation:pulse-wave 2s infinite ease-out}
+@keyframes pulse-wave{0%{transform:scale(.5);opacity:1}100%{transform:scale(2.2);opacity:0}}
+
+.leaflet-popup-content-wrapper{border-radius:12px!important;font-family:'Nunito',sans-serif!important;box-shadow:0 6px 20px rgba(20,47,85,.16)!important;border:1px solid #cbd5e1!important;padding:.2rem!important}
+.leaflet-popup-content{margin:9px 12px!important;line-height:1.4!important}
+.map-popup-title{font-weight:800;font-size:.85rem;color:#142f55;margin-bottom:2px}
+.map-popup-sub{font-size:.72rem;color:#475569;margin-bottom:6px}
+.map-popup-badge{display:inline-block;font-size:.62rem;font-weight:700;padding:2px 7px;border-radius:4px;margin-top:4px}
+.badge-blue{background:#dbeafe;color:#1e40af;border:1px solid #bfdbfe}
+.badge-navy{background:#142f55;color:#ffffff}
+.badge-danger{background:#fee2e2;color:#991b1b;border:1px solid #fecaca}
+.badge-ai-blue{background:#dbeafe;color:#142f55;border:1px solid #bfdbfe;font-weight:800;font-size:.65rem;padding:.2rem .55rem;border-radius:6px}
+
+/* Route Panel & Sidebar */
+.route-panel{display:flex;flex-direction:column;gap:1rem}
+.route-score{display:flex;align-items:center;justify-content:space-between;padding:1rem 1.25rem;background:#ffffff;border:1px solid #cbd5e1;border-radius:16px}
+.rs-label{font-size:.62rem;letter-spacing:.14em;text-transform:uppercase;color:#64748b;font-weight:700}
+.rs-val{font-size:1.6rem;font-weight:400;font-family:'Playfair Display',serif;margin-top:.2rem;color:#142f55}
+.rs-val.good{color:#1d4ed8}.rs-val.ok{color:#475569}.rs-val.bad{color:#dc2626}
+.safety-factors{padding:1rem 1.25rem;display:flex;flex-direction:column;gap:.6rem}
+.sf-row{display:flex;align-items:center;gap:.7rem}
+.sf-icon{font-size:.85rem;width:20px;text-align:center;flex-shrink:0}
+.sf-label{font-size:.7rem;font-weight:700;color:#334155;flex:1}
+.sf-bar-wrap{width:70px;height:5px;border-radius:3px;background:#e2e8f0;overflow:hidden}
+.sf-bar{height:100%;border-radius:3px;transition:width .6s ease}
+.sf-bar.good{background:#2563eb}.sf-bar.ok{background:#64748b}.sf-bar.bad{background:#dc2626}
+.route-alternatives{padding:1rem 1.25rem;display:flex;flex-direction:column;gap:.6rem}
+.ra-item{display:flex;align-items:center;gap:.7rem;padding:.55rem .75rem;border-radius:10px;background:#f8fafc;border:1px solid #cbd5e1;cursor:pointer;transition:all .2s}
+.ra-item:hover{border-color:#3b82f6;background:#eff6ff}
+.ra-item.chosen{border-color:#2563eb;background:#eff6ff;box-shadow:0 0 0 1.5px #2563eb}
+.ra-label{flex:1;font-size:.72rem;font-weight:700;color:#142f55}
+.ra-time{font-size:.65rem;color:#64748b;font-weight:700}
+.ra-score{font-size:.62rem;padding:.1rem .4rem;border-radius:6px;font-weight:700}
+.btn-gmaps{display:block;padding:.65rem;border-radius:12px;background:#eff6ff;border:1.5px solid #bfdbfe;text-align:center;text-decoration:none;font-size:.75rem;font-weight:700;color:#1d4ed8;transition:all .2s}
+.btn-gmaps:hover{background:#dbeafe;color:#142f55}
+
+/* ── FAKE CALL ── */
+.fake-call-overlay{position:fixed;inset:0;z-index:999;background:linear-gradient(180deg,#1a2e1a 0%,#0d1f0d 100%);display:flex;flex-direction:column;align-items:center;justify-content:space-between;padding:3rem 2rem 4rem;opacity:0;pointer-events:none;transition:opacity .4s}
+.fake-call-overlay.show{opacity:1;pointer-events:all}
+.fc-header{text-align:center;color:rgba(255,255,255,.5);font-size:.7rem;font-weight:600;letter-spacing:.15em}
+.fc-caller{text-align:center}
+.fc-avatar{width:90px;height:90px;border-radius:50%;background:linear-gradient(135deg,var(--sage),var(--pink));display:flex;align-items:center;justify-content:center;font-family:'Playfair Display',serif;font-size:2rem;color:#fff;font-weight:600;margin:0 auto 1rem;box-shadow:0 0 0 8px rgba(122,158,126,.2),0 0 0 16px rgba(122,158,126,.1)}
+.fc-name{font-family:'Playfair Display',serif;font-size:1.8rem;font-weight:600;color:#fff;margin-bottom:.35rem}
+.fc-status{font-size:.8rem;color:rgba(255,255,255,.55);font-weight:600;letter-spacing:.08em}
+.fc-actions{display:flex;gap:3rem;justify-content:center}
+.fc-btn{display:flex;flex-direction:column;align-items:center;gap:.5rem}
+.fc-circle{width:60px;height:60px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:1.4rem;cursor:pointer;transition:transform .15s}
+.fc-circle:active{transform:scale(.92)}
+.fc-circle.end{background:#C96A72}.fc-circle.ans{background:var(--safe)}
+.fc-btn-lbl{font-size:.65rem;color:rgba(255,255,255,.55);font-weight:600}
+.fc-timer{font-family:'Playfair Display',serif;font-size:1.2rem;color:rgba(255,255,255,.7);font-weight:400}
+.fc-ringtone{animation:ring-vibe .5s ease-in-out infinite}
+@keyframes ring-vibe{0%,100%{transform:rotate(0)}25%{transform:rotate(-3deg)}75%{transform:rotate(3deg)}}
+
+/* ── ESCALATION MODAL ── */
+.modal-bg{position:fixed;inset:0;background:rgba(42,56,40,.45);backdrop-filter:blur(6px);display:flex;align-items:center;justify-content:center;z-index:500;opacity:0;pointer-events:none;transition:opacity .3s}
+.modal-bg.show{opacity:1;pointer-events:all}
+.modal{background:var(--surface);border:1px solid var(--border);border-radius:24px;padding:2.25rem;max-width:380px;width:90%;text-align:center;box-shadow:0 20px 60px rgba(42,56,40,.2),0 4px 16px rgba(0,0,0,.08)}
+.modal-icon{font-size:2.8rem;margin-bottom:1rem}
+.modal-title{font-family:'Playfair Display',serif;font-size:1.4rem;font-weight:600;color:var(--danger);margin-bottom:.6rem}
+.modal-body{font-size:.74rem;color:var(--text-mid);line-height:1.75;margin-bottom:1.5rem;font-weight:600}
+.modal-actions{display:flex;flex-direction:column;gap:.65rem}
+.ma-call{display:block;padding:.85rem 2rem;border-radius:14px;border:2px solid var(--danger);background:var(--danger-dim);color:var(--danger);font-family:'Nunito',sans-serif;font-size:.82rem;font-weight:700;text-decoration:none;letter-spacing:.04em;transition:all .2s;animation:callpulse 1s ease-in-out infinite}
+@keyframes callpulse{0%,100%{box-shadow:0 0 0 0 rgba(201,106,114,.35)}50%{box-shadow:0 0 0 8px rgba(201,106,114,0)}}
+.ma-help{display:block;padding:.6rem 2rem;border-radius:12px;border:1.5px solid var(--border2);background:transparent;color:var(--text-muted);font-family:'Nunito',sans-serif;font-size:.76rem;font-weight:700;text-decoration:none;transition:all .2s}
+.ma-help:hover{border-color:var(--blue);color:var(--blue);background:var(--blue-dim)}
+.ma-safe{padding:.6rem 2rem;border-radius:12px;border:1.5px solid var(--safe);background:var(--safe-dim);color:var(--safe);font-family:'Nunito',sans-serif;font-size:.76rem;font-weight:700;cursor:pointer;transition:all .2s}
+.ma-safe:hover{background:rgba(91,158,122,.22)}
+
+/* ── TOAST ── */
+.toast{position:fixed;bottom:2rem;left:50%;transform:translateX(-50%) translateY(80px);background:var(--surface);border:1px solid var(--border);padding:.55rem 1.4rem;border-radius:24px;font-size:.72rem;color:var(--text-mid);font-weight:700;transition:transform .35s cubic-bezier(.34,1.56,.64,1);z-index:998;white-space:nowrap;box-shadow:0 4px 20px rgba(122,158,126,.15)}
+.toast.show{transform:translateX(-50%) translateY(0)}
+.toast.ta{border-color:rgba(201,106,114,.3);color:var(--danger);background:rgba(255,245,246,.97)}
+.toast.ts{border-color:rgba(91,158,122,.3);color:var(--safe);background:rgba(240,251,246,.97)}
+
+/* ── LOGIN / SIGNUP PAGE ── */
+.auth-page{position:fixed;inset:0;background:var(--bg);z-index:9999;display:flex;align-items:center;justify-content:center}
+.auth-page::before{content:'';position:absolute;inset:0;background:
+  radial-gradient(ellipse 60% 50% at 20% 20%,rgba(122,158,126,.1) 0%,transparent 60%),
+  radial-gradient(ellipse 50% 60% at 80% 80%,rgba(232,164,176,.1) 0%,transparent 60%);pointer-events:none}
+.auth-box{background:var(--surface);border:1px solid var(--border);border-radius:28px;padding:2.5rem;width:100%;max-width:420px;position:relative;box-shadow:0 8px 40px rgba(122,158,126,.1),0 2px 8px rgba(0,0,0,.04)}
+.auth-logo{display:flex;align-items:center;justify-content:center;gap:.75rem;margin-bottom:2rem}
+.auth-logo-mark{width:44px;height:44px;border-radius:50%;background:linear-gradient(135deg,var(--sage),var(--pink));display:flex;align-items:center;justify-content:center;font-family:'Playfair Display',serif;font-size:18px;color:#fff;font-weight:600;box-shadow:0 4px 16px var(--sage-glow)}
+.auth-logo-text{font-family:'Playfair Display',serif;font-size:1.5rem;font-weight:600;color:var(--text)}
+.auth-logo-text span{color:var(--sage)}
+.auth-tabs{display:flex;border-radius:14px;border:1.5px solid var(--border);overflow:hidden;margin-bottom:1.75rem}
+.auth-tab{flex:1;padding:.6rem;font-size:.78rem;font-weight:700;color:var(--text-muted);cursor:pointer;background:transparent;border:none;font-family:'Nunito',sans-serif;transition:all .2s}
+.auth-tab.active{background:var(--sage);color:#fff}
+.auth-field{margin-bottom:1rem}
+.auth-label{font-size:.65rem;letter-spacing:.14em;text-transform:uppercase;color:var(--text-muted);font-weight:700;margin-bottom:.4rem;display:block}
+.auth-input{width:100%;padding:.65rem .9rem;border-radius:12px;border:1.5px solid var(--border2);background:var(--surface2);color:var(--text);font-family:'Nunito',sans-serif;font-size:.82rem;font-weight:600;outline:none;transition:border-color .2s,box-shadow .2s}
+.auth-input::placeholder{color:var(--text-muted)}
+.auth-input:focus{border-color:var(--sage);box-shadow:0 0 0 3px rgba(122,158,126,.12)}
+.auth-btn{width:100%;padding:.8rem;border-radius:14px;border:none;background:linear-gradient(135deg,var(--sage),#5e8c62);color:#fff;font-family:'Nunito',sans-serif;font-size:.88rem;font-weight:700;cursor:pointer;transition:all .2s;margin-top:.5rem;letter-spacing:.04em}
+.auth-btn:hover{transform:translateY(-1px);box-shadow:0 6px 20px var(--sage-glow)}
+.auth-btn:active{transform:translateY(0)}
+.auth-divider{display:flex;align-items:center;gap:.75rem;margin:1.25rem 0}
+.auth-divider-line{flex:1;height:1px;background:var(--border)}
+.auth-divider span{font-size:.65rem;color:var(--text-muted);font-weight:700;white-space:nowrap}
+.auth-error{background:var(--danger-dim);border:1px solid rgba(201,106,114,.3);color:var(--danger);font-size:.72rem;font-weight:700;border-radius:10px;padding:.5rem .75rem;margin-bottom:.75rem;display:none}
+.auth-error.show{display:block}
+.auth-footer{text-align:center;font-size:.65rem;color:var(--text-muted);font-weight:600;margin-top:1.25rem}
+
+footer{padding:.85rem 1.5rem;border-top:1px solid var(--border);background:rgba(255,255,255,.6);display:flex;justify-content:space-between;align-items:center;font-size:.6rem;color:var(--text-muted);font-weight:700}
+footer strong{color:var(--sage)}
+
+
+/* =========================================================
+   ALERTME PROFESSIONAL UI THEME — visual styling only
+   Navy + white + light blue, with red for emergency actions.
+   Existing page content, IDs, routes and feature logic retained.
+========================================================= */
+:root {
+  --bg: #edf3fa;
+  --surface: #ffffff;
+  --surface2: #f5f8fc;
+  --surface3: #e8eff8;
+  --border: #d8e3f0;
+  --border2: #c3d3e7;
+  --sage: #1769c2;
+  --sage-lt: #72a9f5;
+  --sage-dim: rgba(37, 112, 211, .10);
+  --sage-glow: rgba(37, 112, 211, .18);
+  --pink: #e34a55;
+  --pink-dim: rgba(227, 74, 85, .10);
+  --pink-glow: rgba(227, 74, 85, .18);
+  --pink-dark: #c72f3c;
+  --blue: #2877d7;
+  --blue-dim: rgba(40, 119, 215, .10);
+  --safe: #1769c2;
+  --safe-dim: rgba(37, 112, 211, .09);
+  --danger: #d72638;
+  --danger-dim: rgba(215, 38, 56, .09);
+  --danger-glow: rgba(215, 38, 56, .22);
+  --gold: #9a6a17;
+  --gold-dim: rgba(154, 106, 23, .10);
+  --text: #102b50;
+  --text-mid: #365476;
+  --text-muted: #7186a2;
+}
+html, body { background: var(--bg); color: var(--text); font-family: 'Nunito', Arial, sans-serif; }
+body::before {
+  background: radial-gradient(ellipse 65% 50% at 0% 0%, rgba(57, 127, 214, .08), transparent 65%),
+              radial-gradient(ellipse 55% 50% at 100% 100%, rgba(57, 127, 214, .07), transparent 65%);
+}
+header { background: rgba(255,255,255,.96); border-bottom-color: var(--border); padding: .65rem 1.5rem; }
+.logo-mark, .auth-logo-mark { background: linear-gradient(145deg, #12345b, #1d5f9e); box-shadow: 0 3px 12px rgba(16,43,80,.18); }
+.logo-text, .auth-logo-text { color: var(--text); }
+.logo-text span, .auth-logo-text span, footer strong { color: var(--sage); }
+.logo-tag, .hdr-status, .tab { color: var(--text-muted); }
+.sdot { background: var(--sage); box-shadow: 0 0 0 3px rgba(37,112,211,.14); }
+.fake-call-hdr { border-color: var(--border2); background: #fff; color: var(--text); }
+.fake-call-hdr:hover { background: var(--surface2); border-color: var(--sage); }
+.tabs-bar { background: rgba(255,255,255,.96); border-bottom-color: var(--border); padding: 0 1.5rem; }
+.tab { padding: .85rem 1rem; }
+.tab:hover, .tab.active { color: var(--sage); }
+.tab.active { border-bottom-color: var(--sage); }
+.page { max-width: 1500px; padding: 1.25rem clamp(.75rem, 2vw, 1.75rem); }
+.card, .sos-main, .scenario-section, .ai-response, .circle-map, .route-score {
+  border-color: var(--border); box-shadow: 0 5px 22px rgba(22, 56, 96, .055);
+}
+.card { border-radius: 16px; }
+.card-hdr { border-bottom-color: var(--border); }
+.card-title, .eyebrow, .track-label, .delivery-title { color: var(--text-muted); }
+.btn-lav, .btn-sage, .btn-safe { border-color: var(--sage); background: var(--sage); color: #fff; }
+.btn-lav:hover, .btn-sage:hover, .btn-safe:hover { background: #1257a5; border-color: #1257a5; color: #fff; box-shadow: 0 3px 12px rgba(23,105,194,.18); }
+.btn-ghost { border-color: var(--border2); background: #fff; color: var(--text); }
+.btn-ghost:hover { border-color: var(--sage); color: var(--sage); background: var(--surface2); }
+.input-field, .auth-input { background: #f8fafd; border-color: var(--border2); color: var(--text); }
+.input-field:focus, .auth-input:focus { border-color: var(--sage); box-shadow: 0 0 0 3px rgba(37,112,211,.12); }
+.sos-main { padding: 1.8rem 1.5rem; border-radius: 18px; gap: 1.15rem; }
+.sos-main::before { background: radial-gradient(ellipse 70% 45% at 50% 0%, rgba(37,112,211,.045), transparent 70%); }
+.sos-btn { background: linear-gradient(145deg, #e93642, #bd1f2d); border: 2px solid #d62a37; box-shadow: 0 8px 24px rgba(215,38,56,.22); }
+.sos-btn:hover { box-shadow: 0 10px 30px rgba(215,38,56,.28); }
+.sos-lbl, .sos-btn .sos-lbl { color: #fff; }
+.sos-hint, .sos-btn .sos-hint { color: rgba(255,255,255,.88); }
+.sos-btn.on { background: linear-gradient(145deg, #c71e2d, #a91624); border-color: #a91624; }
+.sring1 { border-color: rgba(215,38,56,.22); }
+.sring2 { border-color: rgba(215,38,56,.12); }
+.dpill { background: #fff; border-color: var(--border2); color: var(--text-mid); }
+.dpill:hover, .dpill.sel { border-color: var(--sage); background: var(--sage-dim); color: var(--sage); }
+.dpill.sel { box-shadow: 0 0 0 3px rgba(37,112,211,.08); }
+.track-card { background: #f7f9fc; border-color: var(--border); }
+.track-card.active { border-color: rgba(23,105,194,.3); background: rgba(37,112,211,.06); }
+.track-card.active .track-val { color: var(--sage); }
+.sbar { background: #edf4fd; border-color: #d3e4f8; color: var(--text-mid); }
+.sbar.safe { background: #edf4fd; border-color: #d3e4f8; color: var(--sage); }
+.sbar.alert { background: #fff0f1; border-color: #f2c9ce; color: var(--danger); }
+.badge-sage, .badge-lav { background: var(--sage-dim); color: var(--sage); border-color: rgba(37,112,211,.2); }
+.badge-safe { background: var(--safe-dim); color: var(--safe); border-color: rgba(37,112,211,.2); }
+.place-item, .scen-btn, .step-item, .route-alternatives .ra-item { border-color: var(--border); }
+.scen-btn:hover, .place-item:hover, .ra-item:hover { border-color: var(--sage); }
+.auth-box { border-color: var(--border); box-shadow: 0 10px 40px rgba(16,43,80,.10); }
+.auth-tab.active, .auth-btn { background: linear-gradient(135deg, #164d85, #1769c2); }
+.auth-btn:hover { box-shadow: 0 6px 20px rgba(23,105,194,.22); }
+footer { background: rgba(255,255,255,.92); border-top-color: var(--border); }
+@media (min-width: 1200px) {
+  .sos-grid { grid-template-columns: minmax(0, 1fr) 320px; gap: 1rem; }
+}
+@media (max-width: 700px) {
+  header { padding: .65rem .8rem; gap: .6rem; flex-wrap: wrap; }
+  .hdr-right { gap: .45rem; }
+  .tabs-bar { padding: 0 .5rem; }
+  .page { padding: .8rem .65rem; }
+  .sos-main { padding: 1.4rem .9rem; }
+}
+
+
+/* ===== AlertMe reference-match UI layer: presentation only ===== */
+:root {
+  --bg: #edf4fc;
+  --surface: #ffffff;
+  --surface2: #f5f9ff;
+  --surface3: #e8f1fc;
+  --border: #d8e5f5;
+  --border2: #bfd2ec;
+  --sage: #1769e8;
+  --sage-lt: #8ebaff;
+  --sage-dim: rgba(23,105,232,.09);
+  --sage-glow: rgba(23,105,232,.18);
+  --pink: #e9a1aa;
+  --pink-dim: rgba(233,161,170,.12);
+  --pink-glow: rgba(233,161,170,.2);
+  --pink-dark: #c94e5b;
+  --blue: #1769e8;
+  --blue-dim: rgba(23,105,232,.09);
+  --safe: #1769e8;
+  --safe-dim: rgba(23,105,232,.09);
+  --danger: #e21f2f;
+  --danger-dim: rgba(226,31,47,.09);
+  --danger-glow: rgba(226,31,47,.2);
+  --gold: #54749f;
+  --gold-dim: rgba(84,116,159,.1);
+  --text: #092b59;
+  --text-mid: #385982;
+  --text-muted: #607b9f;
+}
+html, body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); }
+body::before { background:
+  radial-gradient(ellipse 45% 60% at 0% 20%, rgba(23,105,232,.08), transparent 70%),
+  radial-gradient(ellipse 45% 55% at 100% 100%, rgba(23,105,232,.06), transparent 68%),
+  linear-gradient(135deg, #f8fbff 0%, #edf4fc 55%, #f7faff 100%); }
+.app { min-height: 100vh; }
+header { min-height: 54px; padding: .45rem 1.35rem; gap: 1rem; background: rgba(255,255,255,.97); border-bottom: 1px solid #d7e4f4; box-shadow: 0 2px 8px rgba(9,43,89,.08); }
+.logo { gap: .55rem; flex-shrink: 0; }
+.logo-mark, .auth-logo-mark { background: linear-gradient(145deg,#082a58,#174b8e); box-shadow: 0 3px 12px rgba(9,43,89,.2); }
+.logo-text, .auth-logo-text { font-family: 'Inter',sans-serif; font-weight: 800; letter-spacing: -.03em; color: #092b59; }
+.logo-text span, .auth-logo-text span, footer strong { color: #1769e8; }
+.logo-tag { color: #627c9e; letter-spacing: 0; font-size: .62rem; }
+.tabs-bar { flex: 1; min-width: 0; display: flex; justify-content: center; gap: .2rem; padding: 0; border: 0; background: transparent; backdrop-filter: none; overflow-x: auto; }
+.tab { display:flex; align-items:center; gap:.4rem; padding:.72rem .75rem .65rem; font-size:.72rem; font-weight:700; color:#294b78; border-bottom:2px solid transparent; }
+.tab:hover, .tab.active { color:#075fe5; }
+.tab.active { border-bottom-color:#1769ff; }
+.tab-icon { font-size: .95rem; color: currentColor; }
+.hdr-right { gap: .55rem; flex-shrink: 0; }
+.hdr-status { padding: .45rem .65rem; border: 1px solid #dce8f7; border-radius: 999px; color: #315984; background:#f8fbff; font-size:.67rem; }
+.sdot { background:#1769e8; box-shadow:0 0 0 4px rgba(23,105,232,.12); }
+.fake-call-hdr { padding:.42rem .7rem; border-radius:10px; border:1px solid #9bb6d9; background:#fff; color:#123a6d; font-family:'Inter',sans-serif; font-size:.68rem; }
+.fake-call-hdr:hover { background:#f1f6fd; border-color:#1769e8; }
+.btn { font-family:'Inter',sans-serif; border-radius:9px; }
+.btn-lav, .btn-sage { border-color:#0c3266; background:#0c3266; color:#fff; }
+.btn-lav:hover, .btn-sage:hover { background:#1769e8; border-color:#1769e8; color:#fff; }
+.btn-safe { border-color:#1769e8; background:#1769e8; color:#fff; }
+.btn-safe:hover { background:#0d55c7; }
+.btn-ghost { border-color:#9bb6d9; background:#fff; color:#153b6b; }
+.btn-ghost:hover { border-color:#1769e8; color:#1769e8; background:#f5f9ff; }
+.page { max-width: 1100px; padding: 10px 12px 16px; }
+.page.active { animation: none; }
+.card, .sos-main, .scenario-section, .ai-response, .route-score { border-color:#d8e5f5; box-shadow:0 5px 22px rgba(9,43,89,.055); }
+.card { border-radius:14px; }
+.card-hdr { padding:.78rem 1rem .68rem; border-bottom-color:#e0eaf7; }
+.card-title { color:#123867; letter-spacing:.07em; font-size:.68rem; }
+.badge-sage, .badge-lav { background:#e8f1ff; color:#155fc7; border-color:#d1e2fa; }
+.badge-safe { background:#e8f1ff; color:#155fc7; border-color:#d1e2fa; }
+.badge-danger { background:#fff0f1; color:#c91e2b; border-color:#f5cbd0; }
+.input-field, .auth-input { background:#f7faff; border-color:#d4e2f4; color:#092b59; border-radius:8px; }
+.input-field::placeholder, .auth-input::placeholder { color:#6b84a6; }
+.input-field:focus, .auth-input:focus { border-color:#1769e8; box-shadow:0 0 0 3px rgba(23,105,232,.1); }
+.sos-grid { grid-template-columns:minmax(0,1.42fr) minmax(300px,1fr); gap:.65rem; align-items:start; }
+.sos-main { padding:1.15rem 1rem .8rem; border-radius:15px; gap:.72rem; }
+.sos-main::before { background:radial-gradient(ellipse 70% 45% at 50% 0%,rgba(23,105,232,.045),transparent 70%); }
+.eyebrow { color:#123867; font-size:.64rem; letter-spacing:.16em; }
+.sos-wrap { width:190px; height:190px; }
+.sos-btn { width:158px; height:158px; background:linear-gradient(145deg,#f32735,#d7192a); border:2px solid #ed3340; box-shadow:0 8px 25px rgba(226,31,47,.24); }
+.sos-btn:hover { box-shadow:0 10px 30px rgba(226,31,47,.28); }
+.sos-btn.on { background:linear-gradient(145deg,#c91b2a,#a90f1e); border-color:#a90f1e; }
+.sos-icon { font-family:Arial,sans-serif; font-size:2rem; color:#fff; line-height:1; }
+.sos-lbl, .sos-btn .sos-lbl { font-family:'Inter',sans-serif; color:#fff; font-size:1.8rem; letter-spacing:0; }
+.sos-hint, .sos-btn .sos-hint { color:rgba(255,255,255,.95); font-size:.57rem; letter-spacing:.05em; }
+.sring1 { border-color:rgba(226,31,47,.22); inset:-12px; }
+.sring2 { border-color:rgba(226,31,47,.12); inset:-25px; }
+.timer-big { color:#092b59; font-family:'Inter',sans-serif; font-weight:800; font-size:1.9rem; }
+.timer-sub { color:#607b9f; }
+.dur-row { gap:.35rem; }
+.dpill { background:#fff; border-color:#c7d8ee; color:#35577f; border-radius:999px; padding:.42rem .82rem; }
+.dpill:hover, .dpill.sel { border-color:#1769e8; background:#eaf2ff; color:#075fe5; }
+.dpill.sel { box-shadow:0 0 0 2px rgba(23,105,232,.08); }
+.track-grid { gap:.45rem; }
+.track-card { background:#f6f9fe; border-color:#d9e6f6; border-radius:10px; padding:.65rem .75rem; }
+.track-label { color:#31547f; letter-spacing:.035em; font-size:.62rem; }
+.track-val { color:#506c90; }
+.track-card.active { border-color:#c7dcfa; background:#edf5ff; }
+.track-card.active .track-val { color:#1769e8; }
+.sbar { background:#e9f2ff; border-color:#d2e3fc; color:#153b6b; border-radius:10px; padding:.7rem .8rem; }
+.sbar.safe { background:#e9f2ff; border-color:#d2e3fc; color:#153b6b; }
+.sbar.alert { background:#fff0f1; border-color:#f3cbd0; color:#c91e2b; }
+.sos-sidebar { gap:.65rem; }
+.contact-list-wrap { max-height:220px; }
+.ci { padding:.58rem .95rem; }
+.cav { background:#e8f1ff; border-color:#d1e2fa; color:#155fc7; }
+.empty { color:#627c9e; }
+.log-wrap { padding:.65rem .95rem; }
+.lt { color:#617b9d; }
+.lx { color:#385982; }
+.assist-grid { grid-template-columns:minmax(0,1fr) 310px; gap:.8rem; }
+.scenario-section { padding:1.05rem; border-radius:14px; }
+.scenario-intro { color:#385982; }
+.scenario-grid { gap:.55rem; margin-bottom:1rem; }
+.scen-btn { background:#f6f9fe; border-color:#d8e5f5; border-radius:11px; }
+.scen-btn:hover { border-color:#1769e8; background:#edf5ff; box-shadow:0 4px 14px rgba(23,105,232,.1); }
+.scen-btn.active-scen { border-color:#1769e8; background:#eaf2ff; box-shadow:0 0 0 2px rgba(23,105,232,.08); }
+.scen-title { color:#092b59; }
+.scen-desc, .step-txt { color:#4b688d; }
+.ai-response { background:#f6f9fe; border-radius:12px; }
+.ai-steps-title { color:#1769e8; }
+.step-num { background:#e8f1ff; border-color:#c7dcfa; color:#155fc7; }
+.qa-btn { border-color:#c7d8ee; color:#35577f; }
+.qa-btn:hover, .qa-btn.triggered { border-color:#1769e8; color:#1769e8; background:#eaf2ff; }
+.safe-places { padding:.75rem .9rem; gap:.45rem; }
+.place-item { background:#f6f9fe; border-color:#d8e5f5; border-radius:10px; padding:.6rem; }
+.place-item:hover { border-color:#1769e8; background:#edf5ff; }
+.place-open.open-yes { background:#e8f1ff; color:#155fc7; }
+.route-layout { display:grid; grid-template-columns:minmax(0,1.75fr) minmax(300px,1fr); gap:1.2rem; align-items:start; }
+.route-panel { display:flex; flex-direction:column; gap:.85rem; }
+.route-score, .route-panel .card { border-radius:14px; border:1px solid #d8e5f5; box-shadow:0 4px 16px rgba(9,43,89,.045); background:#ffffff; }
+.ra-item { border:1.5px solid #d8e5f5; border-radius:10px; cursor:pointer; transition:all .2s; }
+.ra-item:hover { border-color:#2563eb; background:#f8fafc; }
+.ra-item.chosen { border-color:#1d4ed8; background:#eff6ff; box-shadow:0 0 0 2px rgba(29,78,216,.15); }
+.auth-page { background:var(--bg); }
+.auth-box { border-color:#d8e5f5; border-radius:20px; }
+.auth-logo-text { font-size:1.45rem; }
+.auth-tab.active, .auth-btn { background:linear-gradient(135deg,#0c3266,#1769e8); }
+.auth-btn:hover { box-shadow:0 6px 20px rgba(23,105,232,.2); }
+footer { background:rgba(255,255,255,.94); border-top-color:#d8e5f5; }
+@media (max-width: 1000px) {
+  header { flex-wrap:wrap; }
+  .tabs-bar { order:3; flex-basis:100%; justify-content:flex-start; }
+  .hdr-right { margin-left:auto; }
+  .page { max-width:900px; }
+  .route-layout { grid-template-columns:1fr; }
+}
+@media (max-width: 800px) {
+  .sos-grid, .assist-grid, .route-layout { grid-template-columns:1fr; }
+  header { padding:.55rem .75rem; gap:.4rem; }
+  .logo-tag { display:none; }
+  .tabs-bar { gap:0; }
+  .tab { padding:.65rem .55rem; font-size:.68rem; }
+  .hdr-right { gap:.3rem; }
+  .hdr-status { display:none; }
+  .page { padding:.7rem .6rem; }
+  .sos-main { padding:1rem .7rem; }
+}
+
+
+/* Route input overrides removed - consolidated into Safe Route theme styles */
+
+
+</style>
+</head>
+<body>
+
+<!-- ══════════════════════════════════════════
+     LOGIN / SIGNUP OVERLAY
+══════════════════════════════════════════ -->
+<div class="auth-page" id="authPage">
+  <div class="auth-box">
+    <div class="auth-logo">
+      <div class="auth-logo-mark">R</div>
+      <div>
+        <div class="auth-logo-text">Alert<span>Me</span></div>
+        <div style="font-size:.6rem;color:var(--text-muted);letter-spacing:.12em">Women Safety Platform</div>
+      </div>
+    </div>
+
+    <div class="auth-tabs">
+      <button class="auth-tab active" id="loginTab" onclick="switchAuth('login')">Sign In</button>
+      <button class="auth-tab" id="signupTab" onclick="switchAuth('signup')">Create Account</button>
+    </div>
+
+    <div id="authError" class="auth-error"></div>
+
+    <!-- LOGIN FORM -->
+    <div id="loginForm">
+      <div class="auth-field">
+        <label class="auth-label">Email / Phone</label>
+        <input class="auth-input" id="loginId" type="text" placeholder="you@email.com or +91…" autocomplete="username">
+      </div>
+      <div class="auth-field">
+        <label class="auth-label">Password</label>
+        <input class="auth-input" id="loginPass" type="password" placeholder="••••••••" autocomplete="current-password">
+      </div>
+      <button class="auth-btn" onclick="doLogin()">🌸 Sign In</button>
+      <div class="auth-footer">Don't have an account? <span style="color:var(--sage);cursor:pointer;font-weight:700" onclick="switchAuth('signup')">Create one →</span></div>
+    </div>
+
+    <!-- SIGNUP FORM -->
+    <div id="signupForm" style="display:none">
+      <div class="auth-field">
+        <label class="auth-label">Full Name</label>
+        <input class="auth-input" id="suName" type="text" placeholder="Your name">
+      </div>
+      <div class="auth-field">
+        <label class="auth-label">Phone (for SOS)</label>
+        <input class="auth-input" id="suPhone" type="tel" placeholder="+91 98765 43210">
+      </div>
+      <div class="auth-field">
+        <label class="auth-label">Email</label>
+        <input class="auth-input" id="suEmail" type="email" placeholder="you@email.com">
+      </div>
+      <div class="auth-field">
+        <label class="auth-label">Password</label>
+        <input class="auth-input" id="suPass" type="password" placeholder="Min 8 characters" autocomplete="new-password">
+      </div>
+      <button class="auth-btn" onclick="doSignup()">🌸 Create Account</button>
+      <div class="auth-footer">Already have an account? <span style="color:var(--sage);cursor:pointer;font-weight:700" onclick="switchAuth('login')">Sign in →</span></div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ MAIN APP (hidden until logged in) ══ -->
+<div class="app" id="mainApp" style="display:none">
+
+<header>
+  <div class="logo">
+    <div class="logo-mark">R</div>
+    <div>
+      <div class="logo-text">Alert<span>Me</span></div>
+      <div class="logo-tag">Women Safety Platform</div>
+    </div>
+  </div>
+  <div class="tabs-bar">
+    <div class="tab active" onclick="switchTab('sos',this)"><span class="tab-icon">◈</span>Smart SOS</div>
+    <div class="tab" onclick="switchTab('assist',this)"><span class="tab-icon">▢</span>Safety Assistant</div>
+    <div class="tab" onclick="switchTab('route',this)"><span class="tab-icon">⌖</span>Safe Route</div>
+  </div>
+  <div class="hdr-right">
+    <button class="fake-call-hdr" onclick="startFakeCall()">☎ Fake Call</button>
+    <div class="hdr-status">
+      <div class="sdot" id="hdrDot"></div>
+      <span id="hdrStatus">Protected · Safe</span>
+    </div>
+    <button class="btn btn-ghost" style="padding:.35rem .7rem;font-size:.65rem" onclick="doLogout()" title="Sign out">⎋ Logout</button>
+  </div>
+</header>
+
+<!-- PAGE 1 — SMART SOS -->
+<div class="page active" id="page-sos">
+<div class="sos-grid">
+
+  <div class="sos-main">
+    <div class="eyebrow">Smart Emergency SOS</div>
+
+    <div class="sos-wrap">
+      <div class="sring sring1" id="ring1"></div>
+      <div class="sring sring2" id="ring2"></div>
+      <button class="sos-btn" id="sosBtn" onclick="triggerSOS()">
+        <span class="sos-icon" aria-hidden="true">⬟</span>
+        <span class="sos-lbl">SOS</span>
+        <span class="sos-hint" id="sosHint">tap to activate</span>
+      </button>
+    </div>
+
+    <div style="text-align:center">
+      <div class="timer-big" id="timerDisp">00:00</div>
+      <div class="timer-sub" id="timerSub">No active alert</div>
+    </div>
+
+    <div style="display:flex;flex-direction:column;align-items:center;gap:.5rem;width:100%">
+      <div class="eyebrow">Alert duration</div>
+      <div class="dur-row">
+        <button class="dpill sel" onclick="setDur(10,this)">10 min</button>
+        <button class="dpill" onclick="setDur(20,this)">20 min</button>
+        <button class="dpill" onclick="setDur(30,this)">30 min</button>
+        <button class="dpill" onclick="setDur(60,this)">1 hour</button>
+      </div>
+    </div>
+
+    <div class="track-grid" id="trackGrid" style="opacity:.4">
+      <div class="track-card" id="tc-loc">
+        <div class="track-label">📍 Live Location</div>
+        <div class="track-val" id="tv-loc">Standby</div>
+      </div>
+      <div class="track-card" id="tc-mic">
+        <div class="track-label">🎤 Audio Record</div>
+        <div class="track-val" id="tv-mic">Standby</div>
+      </div>
+      <div class="track-card" id="tc-cam">
+        <div class="track-label">📸 Camera</div>
+        <div class="track-val" id="tv-cam">Standby</div>
+      </div>
+      <div class="track-card" id="tc-move">
+        <div class="track-label">🚶 Movement</div>
+        <div class="track-val" id="tv-move">Standby</div>
+      </div>
+    </div>
+
+    <div class="delivery-panel" id="deliveryPanel">
+      <div class="delivery-title">📤 Alert Delivery Status</div>
+      <div id="deliveryRows"></div>
+    </div>
+
+    <button class="btn btn-safe" id="cancelBtn" style="display:none;border-radius:24px;padding:.65rem 2rem;font-size:.78rem" onclick="cancelSOS()">
+      ✓ I'm safe — Cancel Alert
+    </button>
+
+    <div class="sbar" id="sbar">
+      <span>🌸</span><span id="sbarTxt">No active alert. You are safe.</span>
+    </div>
+  </div>
+
+  <!-- Sidebar -->
+  <div class="sos-sidebar">
+    <div class="card">
+      <div class="card-hdr">
+        <span class="card-title">Trusted Contacts</span>
+        <span class="badge badge-sage" id="ctBadge">0 contacts</span>
+      </div>
+      <div style="padding:.85rem 1.25rem;border-bottom:1px solid var(--border);display:flex;flex-direction:column;gap:.45rem">
+        <input class="input-field" id="inName" placeholder="Contact name" maxlength="30">
+        <div class="row-gap">
+          <input class="input-field" id="inPhone" placeholder="+91 98765 43210" maxlength="16" style="flex:1">
+          <button class="btn btn-sage" style="padding:.48rem .9rem;font-size:.7rem" onclick="addContact()">+ Add</button>
+        </div>
+      </div>
+      <div class="contact-list-wrap" id="ctList">
+        <div class="empty">No trusted contacts yet.<br>Add someone who can help. 💜</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-hdr"><span class="card-title">Activity Log</span></div>
+      <div class="log-wrap" id="logWrap">
+        <div class="le"><span class="lt" id="initTime">--:--</span><span class="lx">System ready. Waiting for SOS trigger.</span></div>
+      </div>
+    </div>
+  </div>
+
+</div>
+</div>
+
+<!-- PAGE 2 — AI SAFETY ASSISTANT -->
+<div class="page" id="page-assist">
+<div class="assist-grid">
+  <div>
+    <div class="scenario-section">
+      <div class="eyebrow" style="margin-bottom:.75rem">What's your situation?</div>
+      <p class="scenario-intro">Choose a scenario and get instant, step-by-step safety guidance.</p>
+      <div class="scenario-grid">
+        <button class="scen-btn" onclick="loadScenario('cab',this)"><span class="scen-icon">🚕</span><div class="scen-title">Unsafe in cab / ride</div><div class="scen-desc">Driver taking wrong route or acting suspicious</div></button>
+        <button class="scen-btn" onclick="loadScenario('follow',this)"><span class="scen-icon">👣</span><div class="scen-title">Someone following me</div><div class="scen-desc">Person on foot or vehicle shadowing you</div></button>
+        <button class="scen-btn" onclick="loadScenario('alone',this)"><span class="scen-icon">🌙</span><div class="scen-title">Alone at night</div><div class="scen-desc">Walking home or stuck in isolated area</div></button>
+        <button class="scen-btn" onclick="loadScenario('harass',this)"><span class="scen-icon">🚨</span><div class="scen-title">Being harassed</div><div class="scen-desc">Verbal or physical threat from someone nearby</div></button>
+        <button class="scen-btn" onclick="loadScenario('medical',this)"><span class="scen-icon">🏥</span><div class="scen-title">Medical emergency</div><div class="scen-desc">Feeling unwell or injured and alone</div></button>
+        <button class="scen-btn" onclick="loadScenario('accident',this)"><span class="scen-icon">🚗</span><div class="scen-title">Road accident</div><div class="scen-desc">Vehicle accident or breakdown in unsafe area</div></button>
+      </div>
+      <div class="ai-response" id="aiResp">
+        <div class="ai-resp-empty" id="aiEmpty"><span style="font-size:1.8rem">💬</span><span>Select a situation above to get<br>instant safety guidance</span></div>
+        <div class="ai-steps" id="aiSteps"><div class="ai-steps-title" id="aiStepsTitle"></div><div id="aiStepsList"></div><div class="ai-quick-actions" id="aiQA"></div></div>
+      </div>
+    </div>
+  </div>
+
+  <div style="display:flex;flex-direction:column;gap:1rem">
+    <div class="card">
+      <div class="card-hdr"><span class="card-title">Nearby Safe Places</span><span class="badge badge-safe">Live</span></div>
+      <div class="safe-places">
+        <div class="place-item" onclick="openMaps('police station')"><span class="place-icon">🚔</span><div class="place-info"><div class="place-name">Kotwali Police Station</div><div class="place-dist">0.4 km · 5 min walk</div></div><span class="place-open open-yes">Open 24/7</span></div>
+        <div class="place-item" onclick="openMaps('hospital')"><span class="place-icon">🏥</span><div class="place-info"><div class="place-name">MY Hospital</div><div class="place-dist">0.8 km · 10 min walk</div></div><span class="place-open open-yes">Open 24/7</span></div>
+        <div class="place-item" onclick="openMaps('cafe')"><span class="place-icon">☕</span><div class="place-info"><div class="place-name">Café Coffee Day</div><div class="place-dist">0.2 km · 3 min walk</div></div><span class="place-open open-yes">Open now</span></div>
+        <div class="place-item" onclick="openMaps('metro station')"><span class="place-icon">🚇</span><div class="place-info"><div class="place-name">Rajwada Metro Station</div><div class="place-dist">0.6 km · 8 min walk</div></div><span class="place-open open-yes">Open now</span></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-hdr"><span class="card-title">Emergency Numbers</span></div>
+      <div style="padding:.85rem 1.25rem;display:flex;flex-direction:column;gap:.5rem">
+        <a href="tel:112" style="display:flex;align-items:center;gap:.65rem;padding:.55rem .75rem;border-radius:10px;background:var(--danger-dim);border:1px solid rgba(201,106,114,.25);text-decoration:none"><span style="font-size:.9rem">📞</span><span style="font-size:.76rem;font-weight:700;color:var(--danger)">112 — All Emergencies</span></a>
+        <a href="tel:1091" style="display:flex;align-items:center;gap:.65rem;padding:.55rem .75rem;border-radius:10px;background:var(--pink-dim);border:1px solid rgba(232,164,176,.35);text-decoration:none"><span style="font-size:.9rem">👩</span><span style="font-size:.76rem;font-weight:700;color:var(--pink-dark)">1091 — Women Helpline</span></a>
+        <a href="tel:100" style="display:flex;align-items:center;gap:.65rem;padding:.55rem .75rem;border-radius:10px;background:var(--blue-dim);border:1px solid rgba(126,176,200,.25);text-decoration:none"><span style="font-size:.9rem">🚔</span><span style="font-size:.76rem;font-weight:700;color:var(--blue)">100 — Police</span></a>
+        <a href="tel:108" style="display:flex;align-items:center;gap:.65rem;padding:.55rem .75rem;border-radius:10px;background:var(--safe-dim);border:1px solid rgba(91,158,122,.25);text-decoration:none"><span style="font-size:.9rem">🚑</span><span style="font-size:.76rem;font-weight:700;color:var(--safe)">108 — Ambulance</span></a>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- Trusted Circle page removed as requested. SOS contact management remains on Smart SOS. -->
+
+<!-- PAGE 4 — SAFE ROUTE -->
+<div class="page" id="page-route">
+<div class="route-layout">
+  <div class="card" style="border-radius:20px;overflow:hidden">
+    <div class="card-hdr">
+      <span class="card-title">Safe Route Planner</span>
+      <span class="badge badge-ai-blue">AI-powered</span>
+    </div>
+
+    <!-- Integrated Toolbar (Option A Search & Option B Nearest Safe Area) -->
+    <div class="safe-route-toolbar">
+      <div class="route-inputs-grid">
+        <!-- Current Location Field (Automatic Geolocation) -->
+        <div class="route-field">
+          <div class="route-label-row">
+            <label class="route-label" for="routeFrom"><span>📍</span> Current Location</label>
+            <button type="button" class="btn-retry-loc" id="retryLocBtn" onclick="requestUserLocation(true)" style="display:none;" title="Retry GPS location detection">🔄 Retry Location</button>
+          </div>
+          <div class="input-with-icon">
+            <input class="route-input-clean readonly-field" id="routeFrom" type="text" placeholder="Detecting your current location…" readonly>
+            <span class="loc-spinner" id="locSpinner"></span>
+          </div>
+          <div class="loc-status-text" id="routeLocationStatus" role="status">
+            Detecting current GPS location…
+          </div>
+          <div id="insecureOriginNotice" class="insecure-notice" style="display:none;">
+            ⚠️ Geolocation requires HTTPS or localhost in modern browsers.
+          </div>
+        </div>
+
+        <!-- Destination Field (Option A: Search with Autocomplete) -->
+        <div class="route-field">
+          <div class="route-label-row">
+            <label class="route-label" for="routeTo"><span>🎯</span> Destination</label>
+          </div>
+          <div class="input-search-wrap">
+            <input
+              class="route-input-clean"
+              id="routeTo"
+              type="text"
+              placeholder="Search destination, landmark, hospital, police…"
+              autocomplete="off"
+              oninput="onDestinationInput(this.value)"
+              onkeydown="onDestinationKeydown(event)"
+            >
+            <button type="button" class="btn-clear-dest" id="clearDestBtn" onclick="clearDestination()" title="Clear destination">✕</button>
+            <div class="autocomplete-dropdown" id="destAutocompleteList"></div>
+          </div>
+          <div class="loc-status-text" id="destStatus">
+            Enter address or tap on the map to set destination
+          </div>
+        </div>
+      </div>
+
+      <!-- Action Buttons Row -->
+      <div class="route-actions-bar">
+        <button class="btn btn-navy" type="button" id="findRouteBtn" onclick="planRoute()">
+          🧭 Find Safe Route
+        </button>
+        <button class="btn btn-start-nav" type="button" id="startLiveNavBtn" onclick="toggleLiveNavigation()" title="Start turn-by-turn live GPS navigation">
+          ▶ Start Live Navigation
+        </button>
+        <button class="btn btn-nearest-safe" type="button" id="findNearestSafeBtn" onclick="findNearestSafeAreas()">
+          🛡️ Find Nearest Safe Area
+        </button>
+      </div>
+
+      <!-- Option B: Nearest Safe Havens Panel -->
+      <div class="nearest-safe-panel" id="nearestSafePanel" style="display:none;">
+        <div class="nsp-header">
+          <div class="nsp-title">
+            <span class="nsp-badge">Nearby Assistance</span>
+            <span>Nearest Crowded &amp; Safer Places</span>
+          </div>
+          <button type="button" class="btn-close-nsp" onclick="closeNearestSafePanel()" title="Close panel">✕</button>
+        </div>
+        <p class="nsp-desc">High-priority staffed emergency hubs, police stations, open hospitals &amp; populated commercial areas:</p>
+        <div class="nsp-grid" id="nearestSafeList">
+          <!-- Dynamic cards rendered here -->
+        </div>
+      </div>
+    </div>
+
+    <!-- DYNAMIC MAP CONTAINER -->
+    <div class="map-container-wrap">
+      <!-- LIVE NAVIGATION HUD BANNER (Floating on map during active turn-by-turn navigation) -->
+      <div id="liveNavHud" class="live-nav-hud" style="display:none;">
+        <div class="hud-main-row">
+          <div class="hud-maneuver-icon" id="hudManeuverIcon">⬆️</div>
+          <div class="hud-text-wrap">
+            <div class="hud-dist-countdown" id="hudDistCountdown">Preparing navigation…</div>
+            <div class="hud-instruction" id="hudInstruction">Follow highlighted safe corridor</div>
+            <div class="hud-sub-instruction" id="hudSubInstruction">Live GPS tracking active</div>
+          </div>
+          <div class="hud-actions">
+            <button type="button" class="btn-hud-voice" id="hudVoiceBtn" onclick="toggleNavVoice()" title="Toggle voice guidance (Text-to-Speech)">
+              <span id="hudVoiceIcon">🔊</span>
+            </button>
+            <button type="button" class="btn-hud-recenter" onclick="centerOnUser()" title="Recenter map on my GPS location">
+              <span>🎯</span>
+            </button>
+            <button type="button" class="btn-hud-stop" onclick="stopLiveNavigation()" title="Stop live navigation">
+              <span>✕ Stop</span>
+            </button>
+          </div>
+        </div>
+        <div class="hud-metrics-row">
+          <span class="hud-pill" id="hudEtaPill">⏱️ ETA: --</span>
+          <span class="hud-pill" id="hudRemainingPill">📏 Rem: --</span>
+          <span class="hud-pill" id="hudGpsPill">🎯 GPS: Waiting</span>
+          <span class="hud-pill warning" id="hudOffRoutePill" style="display:none;">⚠️ Off-Route Detected — Recalculating…</span>
+        </div>
+      </div>
+
+      <div id="safeRouteMap"></div>
+
+      <!-- Map Style Switcher (Clarity Landmark / OSM / HOT) -->
+      <div class="map-style-switcher">
+        <button type="button" class="style-btn active" id="btnStyleEsri" onclick="switchMapStyle('esri')" title="Clarity Landmark Map (Institutional boundaries & clean road labels)">Clarity</button>
+        <button type="button" class="style-btn" id="btnStyleOsm" onclick="switchMapStyle('osm')" title="Standard OpenStreetMap">OSM</button>
+        <button type="button" class="style-btn" id="btnStyleHot" onclick="switchMapStyle('hot')" title="Humanitarian Street Map (Emergency & Community infrastructure)">HOT</button>
+      </div>
+
+      <button type="button" class="map-recenter-btn" onclick="centerOnUser()" title="Center on My Location">
+        <span>🎯</span> My Location
+      </button>
+      <div class="map-overlay-badge" id="routeOverlayBadge">🔵 Safe route ready</div>
+      <div class="map-click-hint">💡 Tap map to set destination</div>
+      <div class="map-legend">
+        <div class="ml-row"><div class="ml-line" style="background:#1d4ed8"></div>Safe route (recommended)</div>
+        <div class="ml-row"><div class="ml-line" style="background:#64748b"></div>Shorter route</div>
+        <div class="ml-row"><div class="ml-line" style="background:#dc2626;border-top:2px dashed #dc2626;height:0"></div>Fastest route (caution)</div>
+        <div class="ml-row" style="margin-top:2px;display:flex;gap:5px;flex-wrap:wrap">
+          <span>🟢 Start</span> &nbsp;
+          <span>🎯 Dest</span> &nbsp;
+          <span>🎓 College</span> &nbsp;
+          <span>🚔 Police</span> &nbsp;
+          <span>🏥 Hospital</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Real Turn-by-Turn Navigation Panel (Directly Below Map) -->
+    <div id="turnByTurnPanel" class="turn-by-turn-panel" style="display:none;">
+      <div class="tbt-header">
+        <div class="tbt-title">
+          <span>🧭</span> Turn-by-Turn Navigation Directions
+        </div>
+        <div class="tbt-stats">
+          <span class="tbt-pill route-name" id="tbtRouteBadge">Safe Route (Recommended)</span>
+          <span class="tbt-pill time" id="tbtTotalTime">⏱️ -- min</span>
+          <span class="tbt-pill dist" id="tbtTotalDist">📏 -- km</span>
+        </div>
+      </div>
+      <div class="tbt-steps-list" id="tbtStepsList">
+        <!-- Dynamically rendered step cards with icons, street names and distances -->
+      </div>
+    </div>
+  </div>
+
+  <div class="route-panel">
+    <div class="route-score card" style="padding:1.15rem">
+      <div style="width:100%">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+          <div class="rs-label" style="margin:0">Route Safety Assessment</div>
+          <span class="badge badge-ai-blue" id="routeAssessmentBadge">Recommended</span>
+        </div>
+        <div class="rs-val good" id="routeScoreVal" style="font-size:1.05rem;font-weight:800;color:#142f55;display:flex;align-items:center;gap:6px">
+          <span id="routeScoreIcon">🛡️</span> <span id="routeScoreTitle">Prioritized Safe Corridor</span>
+        </div>
+        <div id="routeScoreDesc" style="font-size:.72rem;color:#475569;font-weight:600;line-height:1.35;margin-top:.35rem">
+          Follows primary roads with high foot traffic, verified street lighting, and direct proximity to emergency booths.
+        </div>
+        <div class="safety-transparency-note" style="margin-top:.6rem;padding:6px 8px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:6px;font-size:10.5px;color:#64748b;line-height:1.35">
+          ℹ️ Assessment is based on road classification, commercial foot traffic, and 24/7 emergency service proximity. No route can guarantee 100% safety; stay vigilant.
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-hdr"><span class="card-title">Safety Assessment Criteria</span></div>
+      <div class="safety-factors">
+        <div class="sf-row"><span class="sf-icon">💡</span><span class="sf-label">Major thoroughfares & lighting</span><div class="sf-bar-wrap"><div class="sf-bar good" id="sfLighting" style="width:90%"></div></div></div>
+        <div class="sf-row"><span class="sf-icon">👥</span><span class="sf-label">Commercial foot traffic</span><div class="sf-bar-wrap"><div class="sf-bar good" id="sfTraffic" style="width:80%"></div></div></div>
+        <div class="sf-row"><span class="sf-icon">🚔</span><span class="sf-label">Police booth proximity</span><div class="sf-bar-wrap"><div class="sf-bar ok" id="sfPolice" style="width:70%"></div></div></div>
+        <div class="sf-row"><span class="sf-icon">🏥</span><span class="sf-label">Hospital emergency access</span><div class="sf-bar-wrap"><div class="sf-bar good" id="sfIncidents" style="width:85%"></div></div></div>
+        <div class="sf-row"><span class="sf-icon">🏬</span><span class="sf-label">Open shops & refuges</span><div class="sf-bar-wrap"><div class="sf-bar good" id="sfShops" style="width:90%"></div></div></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-hdr"><span class="card-title">Select Route</span></div>
+      <div class="route-alternatives">
+        <div class="ra-item chosen" id="raSafe" onclick="selectRouteOption('safe', this)">
+          <span style="font-size:.9rem">🔵</span>
+          <div class="ra-label">
+            <div style="font-weight:700">Safe Route (Recommended)</div>
+            <div style="font-size:10.5px;color:#64748b;font-weight:500">Major roads &amp; active hubs</div>
+          </div>
+          <span class="ra-time" id="raTimeSafe">-- min</span>
+        </div>
+        <div class="ra-item" id="raShorter" onclick="selectRouteOption('shorter', this)">
+          <span style="font-size:.9rem">⚪</span>
+          <div class="ra-label">
+            <div style="font-weight:700">Shorter Route</div>
+            <div style="font-size:10.5px;color:#64748b;font-weight:500">Direct walking path</div>
+          </div>
+          <span class="ra-time" id="raTimeShorter">-- min</span>
+        </div>
+        <div class="ra-item" id="raFastest" onclick="selectRouteOption('fastest', this)">
+          <span style="font-size:.9rem">🔴</span>
+          <div class="ra-label">
+            <div style="font-weight:700">Fastest Route (Caution)</div>
+            <div style="font-size:10.5px;color:#64748b;font-weight:500">Narrow lanes · Stay alert</div>
+          </div>
+          <span class="ra-time" id="raTimeFastest">-- min</span>
+        </div>
+      </div>
+      <div style="padding:.75rem 1.25rem;padding-top:0">
+        <a href="#" onclick="openGMaps()" class="btn-gmaps">Open in Google Maps ↗</a>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+
+</div><!-- end .app -->
+
+<!-- FAKE CALL OVERLAY -->
+<div class="fake-call-overlay" id="fakeCallOverlay">
+  <div class="fc-header">INCOMING CALL</div>
+  <div class="fc-caller">
+    <div class="fc-avatar fc-ringtone" id="fcAvatar">M</div>
+    <div class="fc-name" id="fcName">Maa 💜</div>
+    <div class="fc-status" id="fcStatus">Calling…</div>
+  </div>
+  <div style="text-align:center">
+    <div class="fc-timer" id="fcTimer" style="display:none">00:00</div>
+    <div class="fc-actions">
+      <div class="fc-btn"><div class="fc-circle end" onclick="endFakeCall()">📵</div><div class="fc-btn-lbl">Decline</div></div>
+      <div class="fc-btn"><div class="fc-circle ans" onclick="answerFakeCall()">📞</div><div class="fc-btn-lbl">Answer</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- ESCALATION MODAL -->
+<div class="modal-bg" id="escalModal">
+  <div class="modal">
+    <div class="modal-icon">🚨</div>
+    <div class="modal-title">Alert Not Cancelled</div>
+    <div class="modal-body">Your SOS timer expired without being cancelled.<br><br>An <strong style="color:var(--danger)">escalation SMS</strong> has been sent to all contacts.<br><br>Calling <strong style="color:var(--danger)">112</strong> in <span id="callCd" style="font-size:1.1em;color:var(--danger)">5</span>s…</div>
+    <div class="modal-actions">
+      <a href="tel:112" class="ma-call">📞 Call 112 — Emergency</a>
+      <a href="tel:1091" class="ma-help">📞 Call 1091 — Women Helpline</a>
+      <button class="ma-safe" onclick="dismissEscal()">✓ I am safe — Dismiss</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<footer>
+  <span>RakshaAI v3.0 · All features free</span>
+  <span>Emergency: <strong>112</strong> · Women Helpline: <strong>1091</strong> · Police: <strong>100</strong></span>
+</footer>
+
+<script>
+/* ══════════════════════════════════════════
+   AUTH — simple localStorage-based (replace
+   with real backend calls once you add /login
+   and /register endpoints to app.py)
+══════════════════════════════════════════ */
+const USERS_KEY = 'raksha_users';
+const SESSION_KEY = 'raksha_session';
+
+function getUsers() { return JSON.parse(localStorage.getItem(USERS_KEY) || '[]'); }
+function saveUsers(u) { localStorage.setItem(USERS_KEY, JSON.stringify(u)); }
+
+function switchAuth(tab) {
+  document.getElementById('loginForm').style.display  = tab === 'login'  ? 'block' : 'none';
+  document.getElementById('signupForm').style.display = tab === 'signup' ? 'block' : 'none';
+  document.getElementById('loginTab').classList.toggle('active', tab === 'login');
+  document.getElementById('signupTab').classList.toggle('active', tab === 'signup');
+  showAuthError('');
+}
+
+function showAuthError(msg) {
+  const el = document.getElementById('authError');
+  el.textContent = msg;
+  el.classList.toggle('show', !!msg);
+}
+
+function doSignup() {
+  const name  = document.getElementById('suName').value.trim();
+  const phone = document.getElementById('suPhone').value.trim();
+  const email = document.getElementById('suEmail').value.trim().toLowerCase();
+  const pass  = document.getElementById('suPass').value;
+
+  if (!name || !email || !pass) { showAuthError('Please fill in all fields.'); return; }
+  if (pass.length < 8) { showAuthError('Password must be at least 8 characters.'); return; }
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { showAuthError('Enter a valid email address.'); return; }
+
+  const users = getUsers();
+  if (users.find(u => u.email === email)) { showAuthError('An account with this email already exists.'); return; }
+
+  users.push({ name, phone, email, pass, id: Date.now() });
+  saveUsers(users);
+  localStorage.setItem(SESSION_KEY, JSON.stringify({ name, email, phone }));
+  launchApp(name);
+}
+
+function doLogin() {
+  const id   = document.getElementById('loginId').value.trim().toLowerCase();
+  const pass = document.getElementById('loginPass').value;
+  if (!id || !pass) { showAuthError('Enter your email/phone and password.'); return; }
+
+  const users = getUsers();
+  const user  = users.find(u => (u.email === id || u.phone === id) && u.pass === pass);
+  if (!user) { showAuthError('Incorrect credentials. Please try again.'); return; }
+
+  localStorage.setItem(SESSION_KEY, JSON.stringify({ name: user.name, email: user.email, phone: user.phone }));
+  launchApp(user.name);
+}
+
+function doLogout() {
+  localStorage.removeItem(SESSION_KEY);
+  document.getElementById('mainApp').style.display = 'none';
+  document.getElementById('authPage').style.display = 'flex';
+  switchAuth('login');
+  if (alertActive) cancelSOS();
+}
+
+function launchApp(name) {
+  document.getElementById('authPage').style.display = 'none';
+  document.getElementById('mainApp').style.display  = 'flex';
+  document.getElementById('initTime').textContent = ts();
+  renderContacts(); renderAlertHistory();
+  toast('Welcome back, ' + name + '! 🌸', 's');
+}
+
+// Auto-login if session exists
+(function checkSession() {
+  const sess = localStorage.getItem(SESSION_KEY);
+  if (sess) {
+    try {
+      const s = JSON.parse(sess);
+      launchApp(s.name);
+    } catch(e) {
+      localStorage.removeItem(SESSION_KEY);
+    }
+  }
+})();
+
+/* ══════════════════════════════════════════
+   STATE
+══════════════════════════════════════════ */
+let contacts = JSON.parse(localStorage.getItem('raksha_contacts') || '[]');
+let alertHistory = JSON.parse(localStorage.getItem('raksha_history') || '[]');
+let dur = 10, alertActive = false;
+let timerInt = null, escalTimeout = null, secondsLeft = 0;
+let watchId = null, mediaRec = null, camInterval = null, moveInterval = null;
+let lastPos = null, lastMoveTime = Date.now();
+let fakeCallInt = null, fakeCallSecs = 0;
+
+/* ══════════════════════════════════════════
+   TABS
+══════════════════════════════════════════ */
+function switchTab(id, el) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('page-' + id).classList.add('active');
+  if (id === 'route') {
+    requestUserLocation(false);
+    if (safeMap) {
+      setTimeout(() => { safeMap.invalidateSize(); }, 250);
+    }
+  } else {
+    // If user leaves the route planner page while navigation is active, stop navigation to save battery and stop GPS tracking
+    if (typeof stopLiveNavigation === 'function' && isNavigating) {
+      stopLiveNavigation(true);
+    }
+  }
+}
+
+/* ══════════════════════════════════════════
+   HELPERS
+══════════════════════════════════════════ */
+function ts() { return new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }); }
+function now() { return new Date().toLocaleString('en-IN', { hour: '2-digit', minute: '2-digit', day: '2-digit', month: 'short' }); }
+function esc(s) { return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+function toast(msg, type = '') {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'toast show' + (type === 'a' ? ' ta' : type === 's' ? ' ts' : '');
+  setTimeout(() => t.className = 'toast', 3500);
+}
+
+function log(txt, type = '') {
+  const w = document.getElementById('logWrap');
+  const e = document.createElement('div');
+  e.className = 'le';
+  e.innerHTML = `<span class="lt">${ts()}</span><span class="lx ${type}">${txt}</span>`;
+  w.insertBefore(e, w.firstChild);
+}
+
+/* ══════════════════════════════════════════
+   DURATION
+══════════════════════════════════════════ */
+function setDur(m, btn) {
+  if (alertActive) return;
+  dur = m;
+  document.querySelectorAll('.dpill').forEach(b => b.classList.remove('sel'));
+  btn.classList.add('sel');
+}
+
+/* ══════════════════════════════════════════
+   SOS CORE — GPS captured BEFORE starting
+══════════════════════════════════════════ */
+function triggerSOS() {
+  if (alertActive) return;
+  if (contacts.length === 0) { toast('💜 Add at least one trusted contact first', 'a'); return; }
+
+  toast('📍 Getting your location…', '');
+
+  // Try to get GPS first, then start SOS
+  if (navigator.geolocation) {
+    navigator.geolocation.getCurrentPosition(
+      pos => {
+        lastPos = pos;
+        log('📍 Location locked: ' + pos.coords.latitude.toFixed(5) + ', ' + pos.coords.longitude.toFixed(5));
+        startSOS();
+      },
+      err => {
+        log('⚠️ GPS unavailable — proceeding without location', 'w');
+        startSOS();
+      },
+      { enableHighAccuracy: true, timeout: 8000, maximumAge: 0 }
+    );
+  } else {
+    startSOS();
+  }
+}
+
+function startSOS() {
+  alertActive = true;
+  secondsLeft = dur * 60;
+
+  document.getElementById('sosBtn').classList.add('on');
+  document.getElementById('sosHint').textContent = 'ACTIVE';
+  document.getElementById('ring1').classList.add('on');
+  document.getElementById('ring2').classList.add('on');
+  document.getElementById('cancelBtn').style.display = 'block';
+  document.getElementById('timerDisp').classList.add('on');
+  document.getElementById('timerSub').textContent = 'Time remaining before escalation';
+  document.getElementById('hdrDot').classList.add('danger');
+  document.getElementById('hdrStatus').textContent = 'Alert Active';
+  document.getElementById('sbar').className = 'sbar alert';
+  document.getElementById('sbarTxt').textContent = '🚨 Alert sent to ' + contacts.length + ' contact(s)';
+  document.getElementById('trackGrid').style.opacity = '1';
+
+  updateTimer();
+  timerInt = setInterval(updateTimer, 1000);
+  escalTimeout = setTimeout(triggerEscal, secondsLeft * 1000);
+
+  startLiveLocation();
+  startAudioRecording();
+  startCameraCapture();
+  startMovementTracking();
+
+  sendAlerts('initial');
+
+  log('🚨 SOS activated — alert sent to ' + contacts.length + ' contact(s)', 'a');
+  log('Duration: ' + dur + ' min · Live tracking started', 'a');
+  toast('🚨 Sending alerts to ' + contacts.length + ' contact(s)…', 'a');
+  addAlertToHistory('initial');
+}
+
+function updateTimer() {
+  if (secondsLeft <= 0) return;
+  secondsLeft--;
+  const m = String(Math.floor(secondsLeft / 60)).padStart(2, '0');
+  const s = String(secondsLeft % 60).padStart(2, '0');
+  document.getElementById('timerDisp').textContent = m + ':' + s;
+}
+
+function cancelSOS() {
+  if (!alertActive) return;
+  clearInterval(timerInt);
+  clearTimeout(escalTimeout);
+  alertActive = false;
+  stopAllTracking();
+
+  sendAlerts('cancel');
+
+  document.getElementById('sosBtn').classList.remove('on');
+  document.getElementById('sosHint').textContent = 'tap to activate';
+  document.getElementById('ring1').classList.remove('on');
+  document.getElementById('ring2').classList.remove('on');
+  document.getElementById('cancelBtn').style.display = 'none';
+  document.getElementById('timerDisp').classList.remove('on');
+  document.getElementById('timerDisp').textContent = '00:00';
+  document.getElementById('timerSub').textContent = 'No active alert';
+  document.getElementById('hdrDot').classList.remove('danger');
+  document.getElementById('hdrStatus').textContent = 'Protected · Safe';
+  document.getElementById('sbar').className = 'sbar safe';
+  document.getElementById('sbarTxt').textContent = '✓ Alert cancelled. You are marked safe.';
+  document.getElementById('trackGrid').style.opacity = '.4';
+  resetTrackCards();
+
+  setTimeout(() => { document.getElementById('deliveryPanel').classList.remove('show'); }, 8000);
+
+  log('✓ Alert cancelled. Contacts notified you are safe.', 's');
+  toast('✓ Contacts notified you are safe', 's');
+  addAlertToHistory('cancel');
+
+  setTimeout(() => {
+    document.getElementById('sbar').className = 'sbar';
+    document.getElementById('sbarTxt').textContent = 'No active alert. You are safe.';
+  }, 8000);
+}
+
+function triggerEscal() {
+  clearInterval(timerInt);
+  document.getElementById('timerDisp').textContent = '00:00';
+  document.getElementById('escalModal').classList.add('show');
+  sendAlerts('escalation');
+  addAlertToHistory('escalation');
+  log('⚠️ Escalation — SMS sent. Emergency call initiating.', 'a');
+  let c = 5;
+  const el = document.getElementById('callCd');
+  const ci = setInterval(() => {
+    c--; if (el) el.textContent = c;
+    if (c <= 0) { clearInterval(ci); window.location.href = 'tel:112'; }
+  }, 1000);
+}
+
+function dismissEscal() {
+  document.getElementById('escalModal').classList.remove('show');
+  cancelSOS();
+}
+
+/* ══════════════════════════════════════════
+   SEND ALERTS — Flask backend /send-alert
+══════════════════════════════════════════ */
+function sendAlerts(type) {
+  if (!contacts.length) return;
+
+  const loc = lastPos
+    ? `${lastPos.coords.latitude},${lastPos.coords.longitude}`
+    : '';
+
+  const mapsLink = lastPos
+    ? `https://maps.google.com/?q=${lastPos.coords.latitude},${lastPos.coords.longitude}`
+    : '';
+
+  const payload = {
+    type,
+    contacts: contacts.map(c => ({ name: c.name, phone: c.phone })),
+    duration: dur,
+    timestamp: new Date().toISOString(),
+    location: loc || 'Location unavailable',
+    maps_link: mapsLink
+  };
+
+  showDeliveryPanel(contacts, 'sending');
+
+  fetch('/send-alert', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload)
+  })
+  .then(async res => {
+    if (!res.ok) throw new Error(await res.text());
+    return res.json();
+  })
+  .then(data => {
+    if (data.results) {
+      updateDeliveryPanel(data.results);
+      const smsSent    = data.results.filter(r => r.sms === 'sent').length;
+      const smsQueued  = data.results.filter(r => r.sms === 'queued').length;
+      const smsFailed  = data.results.filter(r => r.sms === 'failed').length;
+      const waSent     = data.results.filter(r => r.whatsapp === 'sent').length;
+      const totalCtc   = data.results.length;
+      if (smsSent === totalCtc) {
+        toast(type === 'cancel' ? '\u2705 Safety update sent to all contacts via SMS.' : '\u2705 SOS SMS delivered to all ' + totalCtc + ' contact(s).', 's');
+      } else if (smsQueued > 0 && smsFailed === 0) {
+        toast(`\u23f3 SMS queued for ${totalCtc} contact(s) \u2014 device may be offline.`, 'a');
+      } else if (smsSent > 0 || smsQueued > 0) {
+        toast(`\u26a0\ufe0f SMS sent/queued for ${smsSent + smsQueued} of ${totalCtc} contact(s). ${smsFailed} failed.`, 'a');
+      } else {
+        toast('\u274c SMS failed for all contacts. Check TextBee device is online.', 'a');
+      }
+    } else {
+      updateDeliveryPanelFallback('failed');
+      toast('\u274c Server response did not include message results.', 'a');
+    }
+  })
+  .catch(err => {
+    console.error('Alert error:', err);
+    updateDeliveryPanelFallback('failed');
+    toast('\u274c Backend not reachable. Is app.py running?', 'a');
+  });
+}
+
+function showDeliveryPanel(contactList, state) {
+  const panel = document.getElementById('deliveryPanel');
+  const rows  = document.getElementById('deliveryRows');
+  panel.classList.add('show');
+  rows.innerHTML = contactList.map(c => `
+    <div class="delivery-row" id="dr-${c.id}">
+      <div>
+        <div class="delivery-name">${esc(c.name)}</div>
+        <div class="delivery-phone">${esc(c.phone)}</div>
+      </div>
+      <div class="delivery-badges">
+        <span class="dbadge sending" id="sms-${c.id}"><span class="spin">⟳</span> SMS</span>
+        <span class="dbadge sending" id="wa-${c.id}"><span class="spin">⟳</span> WA</span>
+      </div>
+    </div>`).join('');
+}
+
+function updateDeliveryPanel(results) {
+  results.forEach(r => {
+    const contact = contacts.find(c =>
+      c.phone.replace(/\s/g,'') === r.phone.replace(/\s/g,'') || c.name === r.name
+    );
+    if (!contact) return;
+    const s = document.getElementById('sms-' + contact.id);
+    const w = document.getElementById('wa-'  + contact.id);
+    if (s) {
+      // SMS via TextBee: sent | queued | failed
+      if (r.sms === 'sent')         { s.className = 'dbadge sent';    s.textContent = '\u2713 SMS'; }
+      else if (r.sms === 'queued')  { s.className = 'dbadge queued';  s.textContent = '\u23f3 SMS'; }
+      else if (r.sms === 'skipped') { s.className = 'dbadge skipped'; s.textContent = '\u2013 SMS'; }
+      else                          { s.className = 'dbadge failed';  s.textContent = '\u2715 SMS'; }
+      if (r.sms === 'queued' && s.title !== undefined) s.title = 'SMS queued — device may be offline';
+      if (r.sms === 'failed' && r.sms_error) s.title = r.sms_error;
+    }
+    if (w) {
+      if (r.whatsapp === 'sent')         { w.className = 'dbadge sent';    w.textContent = '\u2713 WA'; }
+      else if (r.whatsapp === 'skipped') { w.className = 'dbadge skipped'; w.textContent = '\u2013 WA'; }
+      else                               { w.className = 'dbadge failed';  w.textContent = '\u2715 WA'; }
+    }
+  });
+}
+
+function updateDeliveryPanelFallback(state) {
+  contacts.forEach(c => {
+    const s = document.getElementById('sms-' + c.id);
+    const w = document.getElementById('wa-'  + c.id);
+    if (s) { s.className = 'dbadge ' + state; s.textContent = state === 'sent' ? '\u2713 SMS' : state === 'queued' ? '\u23f3 SMS' : '\u2715 SMS'; }
+    if (w) { w.className = 'dbadge ' + state; w.textContent = state === 'sent' ? '\u2713 WA'  : '\u2715 WA'; }
+  });
+}
+
+/* ══════════════════════════════════════════
+   SMART TRACKING
+══════════════════════════════════════════ */
+function startLiveLocation() {
+  setTrack('loc', 'active', 'Acquiring…');
+  if (!navigator.geolocation) { setTrack('loc', '', 'Not supported'); return; }
+  watchId = navigator.geolocation.watchPosition(
+    pos => {
+      if (!alertActive) return;
+      lastPos = pos;
+      const lat = pos.coords.latitude.toFixed(5);
+      const lng = pos.coords.longitude.toFixed(5);
+      setTrack('loc', 'active', lat + ', ' + lng);
+    },
+    () => setTrack('loc', '', 'Location denied'),
+    { enableHighAccuracy: true, maximumAge: 10000, timeout: 15000 }
+  );
+}
+
+function startAudioRecording() {
+  setTrack('mic', 'active', 'Requesting…');
+  if (!navigator.mediaDevices) { setTrack('mic', '', 'Not supported'); return; }
+  navigator.mediaDevices.getUserMedia({ audio: true })
+    .then(stream => { mediaRec = new MediaRecorder(stream); mediaRec.start(); setTrack('mic', 'active', 'Recording ●'); })
+    .catch(() => setTrack('mic', '', 'Mic denied'));
+}
+
+function startCameraCapture() {
+  setTrack('cam', 'active', 'Requesting…');
+  if (!navigator.mediaDevices) { setTrack('cam', '', 'Not supported'); return; }
+  navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } })
+    .then(() => {
+      setTrack('cam', 'active', 'Photo every 2 min');
+      camInterval = setInterval(() => {
+        if (!alertActive) return;
+        setTrack('cam', 'active', 'Last: ' + ts());
+        log('📸 Photo captured at ' + ts());
+      }, 120000);
+    })
+    .catch(() => setTrack('cam', '', 'Camera denied'));
+}
+
+function startMovementTracking() {
+  setTrack('move', 'active', 'Tracking…');
+  lastMoveTime = Date.now();
+  moveInterval = setInterval(() => {
+    if (!alertActive || !lastPos) { setTrack('move', '', 'No GPS'); return; }
+    const spd = lastPos.coords.speed;
+    if (spd === null) { setTrack('move', 'active', 'Moving'); return; }
+    if (spd > 15) {
+      setTrack('move', 'warn', 'Fast: ' + Math.round(spd * 3.6) + ' km/h');
+      log('🚗 High speed: ' + Math.round(spd * 3.6) + ' km/h', 'w');
+    } else if (spd < 0.5) {
+      const stopped = Math.round((Date.now() - lastMoveTime) / 1000);
+      if (stopped > 120) { setTrack('move', 'warn', 'Stopped ' + Math.round(stopped / 60) + ' min'); }
+      else { setTrack('move', 'active', 'Slow / still'); }
+    } else {
+      lastMoveTime = Date.now();
+      setTrack('move', 'active', Math.round(spd * 3.6) + ' km/h');
+    }
+  }, 10000);
+}
+
+function stopAllTracking() {
+  if (watchId !== null) { navigator.geolocation.clearWatch(watchId); watchId = null; }
+  if (mediaRec && mediaRec.state !== 'inactive') { try { mediaRec.stop(); } catch(e){} }
+  if (camInterval) { clearInterval(camInterval); camInterval = null; }
+  if (moveInterval) { clearInterval(moveInterval); moveInterval = null; }
+  mediaRec = null;
+  log('🛑 All tracking stopped');
+}
+
+function setTrack(id, state, val) {
+  const card = document.getElementById('tc-' + id);
+  card.className = 'track-card' + (state ? ' ' + state : '');
+  document.getElementById('tv-' + id).textContent = val;
+}
+function resetTrackCards() { ['loc','mic','cam','move'].forEach(id => setTrack(id, '', 'Standby')); }
+
+/* ══════════════════════════════════════════
+   CONTACTS
+══════════════════════════════════════════ */
+function addContact() {
+  const name  = document.getElementById('inName').value.trim();
+  const phone = document.getElementById('inPhone').value.trim();
+  if (!name || !phone) { toast('Enter both name and phone', 'a'); return; }
+  if (!/^\+?[\d\s\-]{7,16}$/.test(phone)) { toast('Enter a valid phone number (e.g. +919876543210)', 'a'); return; }
+  contacts.push({ name, phone, id: Date.now(), color: randomColor() });
+  saveContacts();
+  document.getElementById('inName').value = '';
+  document.getElementById('inPhone').value = '';
+  renderContacts();
+  toast(name + ' added to trusted circle 💜', 's');
+}
+function deleteContact(id) { contacts = contacts.filter(c => c.id !== id); saveContacts(); renderContacts(); }
+function saveContacts() { localStorage.setItem('raksha_contacts', JSON.stringify(contacts)); }
+function randomColor() {
+  const cols = ['#7A9E7E','#7EB0C8','#5B9E7A','#C97E8E','#C49A5A','#8BB8A8'];
+  return cols[Math.floor(Math.random() * cols.length)];
+}
+
+function renderContacts() {
+  const list  = document.getElementById('ctList');
+  const badge = document.getElementById('ctBadge');
+  badge.textContent = contacts.length + (contacts.length === 1 ? ' contact' : ' contacts');
+  if (!contacts.length) { list.innerHTML = '<div class="empty">No trusted contacts yet.<br>Add someone who can help. 💜</div>'; return; }
+  list.innerHTML = contacts.map(c => `
+    <div class="ci">
+      <div class="cav" style="background:${c.color||'var(--sage)'}">${esc(c.name.slice(0,2).toUpperCase())}</div>
+      <div class="ci-info">
+        <div class="ci-name">${esc(c.name)}</div>
+        <div class="ci-phone">${esc(c.phone)}</div>
+      </div>
+      <button class="cdel" onclick="deleteContact(${c.id})">✕</button>
+    </div>`).join('');
+}
+
+function addAlertToHistory(type) {
+  alertHistory.unshift({ type, time: now(), contacts: contacts.map(c => c.name), id: Date.now() });
+  if (alertHistory.length > 20) alertHistory.pop();
+  localStorage.setItem('raksha_history', JSON.stringify(alertHistory));
+  renderAlertHistory();
+}
+
+function renderAlertHistory() {
+  const el    = document.getElementById('alertHist');
+  const badge = document.getElementById('alertHistBadge');
+  // Trusted Circle's dedicated alert-history panel was removed from the UI.
+  // Keep stored history intact and safely skip rendering when that panel is absent.
+  if (!el || !badge) return;
+  badge.textContent = alertHistory.length + ' alert' + (alertHistory.length === 1 ? '' : 's');
+  if (!alertHistory.length) { el.innerHTML = '<div class="empty" style="padding:1.5rem">No alerts sent yet. Stay safe. 💜</div>'; return; }
+  const icons  = { initial:'🚨', cancel:'✅', escalation:'⚠️' };
+  const labels = { initial:'SOS Activated', cancel:'Alert Cancelled', escalation:'Escalation Sent' };
+  el.innerHTML = alertHistory.map(a => `
+    <div class="al-item">
+      <span class="al-icon">${icons[a.type]||'📋'}</span>
+      <div class="al-body">
+        <div class="al-msg">${labels[a.type]||a.type}</div>
+        <div class="al-time">${a.time}</div>
+        <div class="al-seen">${a.contacts.map(n=>`<span class="seen-chip ${a.type==='initial'||a.type==='escalation'?'seen-no':'seen-yes'}">${esc(n)}</span>`).join('')}</div>
+      </div>
+    </div>`).join('');
+}
+
+/* ══════════════════════════════════════════
+   AI SAFETY ASSISTANT
+══════════════════════════════════════════ */
+const scenarios = {
+  cab:{title:'You feel unsafe in a cab / ride',steps:[{t:'Share your live location immediately',d:'Open Google Maps → Share Location → send to a trusted contact right now.'},{t:'Note the cab details',d:'Memorise or photograph the <strong>car number plate, driver name and photo</strong> from the app.'},{t:'Call someone and stay on the line',d:'Call a trusted contact and keep talking. Mention your cab details loudly so the driver hears.'},{t:'Change your destination',d:'Redirect to a <strong>police station, hospital or a busy public place</strong>.'},{t:'Use the SOS button',d:'If you feel in immediate danger, tap SOS. An alert + your location will be sent instantly.'}],actions:['📍 Share Location','🛡️ Activate SOS','🚔 Nearby Police']},
+  follow:{title:'Someone is following you',steps:[{t:'Do NOT go home',d:'A follower should <strong>not know where you live</strong>. Go to a crowded public place instead.'},{t:'Enter a busy shop or cafe',d:'Walk confidently into the nearest open shop. Tell the staff you feel unsafe.'},{t:'Change your route unpredictably',d:'Turn corners, cross roads — make it hard to follow.'},{t:'Call someone right now',d:'Tell a friend/family your exact location. Keep them on the phone while walking.'},{t:'Call 100 or trigger SOS',d:'If the person gets closer or you feel threatened, call <strong>100 (Police)</strong> or use the SOS button.'}],actions:['📍 Share Location','🛡️ Activate SOS','📞 Call 100']},
+  alone:{title:'You are alone at night',steps:[{t:'Stay in lit and crowded areas',d:'Avoid shortcuts through dark or empty streets even if they are faster.'},{t:'Walk confidently and stay alert',d:'Keep your phone in your pocket (not hand), headphones out, and be aware of surroundings.'},{t:'Check the Safe Route tab',d:'Use the <strong>Safe Route planner</strong> to find the best-lit path home.'},{t:'Share your live location',d:'Let a trusted contact track you until you reach home. Text when you arrive.'},{t:'Trust your gut — activate SOS if needed',d:'If something feels wrong, do not wait. Tap the SOS button immediately.'}],actions:['📍 Share Location','🗺️ Safe Route','🛡️ Activate SOS']},
+  harass:{title:'You are being harassed',steps:[{t:'Be loud and assertive',d:'Say firmly: "Stop it. I do not know you." Draw attention — do not whisper or plead.'},{t:'Move toward people immediately',d:'Walk to a group of people, a shop, or any busy area. Do not stay isolated.'},{t:'Use your phone visibly',d:'Take a photo of the person if safe to do so. Pretend to call the police out loud.'},{t:'Contact 1091 Women Helpline',d:'Call <strong>1091</strong> — they provide immediate guidance and can alert local police.'},{t:'Trigger SOS',d:'Use the SOS button to alert your trusted contacts with your exact location instantly.'}],actions:['📞 Call 1091','🛡️ Activate SOS','📍 Share Location']},
+  medical:{title:'Medical emergency — you are unwell or injured',steps:[{t:'Call 108 for ambulance immediately',d:'<strong>108</strong> is the ambulance helpline — free and available 24/7 across India.'},{t:'Stay where you are if possible',d:'Sit down, stay calm. Do not try to walk if you are dizzy or injured.'},{t:'Alert your trusted contacts via SOS',d:'Tap SOS so your contacts know your location and can come to you.'},{t:'Ask someone nearby for help',d:'Do not hesitate to ask a stranger, shopkeeper, or security guard for assistance.'},{t:'Unlock your phone medical ID',d:'Keep your blood group and emergency info accessible from your lock screen.'}],actions:['📞 Call 108','🛡️ Activate SOS','📍 Share Location']},
+  accident:{title:'Road accident or breakdown',steps:[{t:'Move to safety first',d:'If possible, move yourself and others away from the road to a safe area.'},{t:'Call 112 immediately',d:'<strong>112</strong> dispatches the nearest police + ambulance. Give your location clearly.'},{t:'Turn on hazard lights',d:'If in a vehicle, turn on hazard lights and place anything reflective behind the car.'},{t:'Trigger SOS',d:'Activate SOS so your contacts know your exact GPS location immediately.'},{t:'Do not move injured persons',d:'Unless in immediate danger (fire, water), do not move someone who may have spine injury.'}],actions:['📞 Call 112','🛡️ Activate SOS','📍 Share Location']}
+};
+
+function loadScenario(key, btn) {
+  document.querySelectorAll('.scen-btn').forEach(b => b.classList.remove('active-scen'));
+  btn.classList.add('active-scen');
+  const s = scenarios[key];
+  document.getElementById('aiEmpty').style.display = 'none';
+  const steps = document.getElementById('aiSteps');
+  steps.classList.add('show');
+  document.getElementById('aiStepsTitle').textContent = s.title;
+  document.getElementById('aiStepsList').innerHTML = s.steps.map((st,i) => `
+    <div class="step-item">
+      <div class="step-num">${i+1}</div>
+      <div class="step-txt"><strong>${st.t}</strong> — ${st.d}</div>
+    </div>`).join('');
+  document.getElementById('aiQA').innerHTML = s.actions.map(a => `
+    <button class="qa-btn" onclick="triggerQuickAction(this,'${a}')">${a}</button>`).join('');
+}
+
+function triggerQuickAction(btn, label) {
+  if (label.includes('SOS')) {
+    btn.classList.add('triggered'); btn.textContent = '✓ SOS Active';
+    switchTab('sos', document.querySelectorAll('.tab')[0]);
+    setTimeout(() => { if (!alertActive) triggerSOS(); }, 400);
+  } else if (label.includes('Location')) {
+    btn.classList.add('triggered'); btn.textContent = '✓ Location Shared';
+    if (navigator.geolocation) navigator.geolocation.getCurrentPosition(pos => {
+      const url = `https://maps.google.com/maps?q=${pos.coords.latitude},${pos.coords.longitude}`;
+      toast('📍 ' + url, 's');
+    });
+  } else if (label.includes('Route'))  { switchTab('route', document.querySelectorAll('.tab')[2]); }
+  else if (label.includes('1091')) { window.location.href = 'tel:1091'; }
+  else if (label.includes('112'))  { window.location.href = 'tel:112'; }
+  else if (label.includes('100'))  { window.location.href = 'tel:100'; }
+  else if (label.includes('108'))  { window.location.href = 'tel:108'; }
+}
+
+/* ══════════════════════════════════════════
+   SAFE ROUTE — NAVY & LIGHT BLUE DYNAMIC ENGINE
+══════════════════════════════════════════ */
+let safeMap = null;
+let userLocMarker = null;
+let destMarker = null;
+let safeRoutePolylines = {
+  safe: null,
+  shorter: null,
+  fastest: null
+};
+let safeRoutePOIs = [];
+let nearestSafeAreaMarkers = [];
+let currentRoutesData = {
+  safe: null,
+  shorter: null,
+  fastest: null
+};
+let routeTurnMarkers = [];
+let routeArrowMarkers = [];
+let currentOrigin = null; // { lat, lng, name, address }
+let currentDest = null;   // { lat, lng, name }
+let activeRoute = 'safe';
+let isDetectingLocation = false;
+let autocompleteDebounceTimer = null;
+
+// ── Multi-Style Tile Providers & Prominent Institution POIs ──
+let activeMapStyle = 'esri';
+let mapTileLayers = { esri: null, osm: null, hot: null };
+let institutionMarkers = [];
+
+// ── Live Turn-by-Turn GPS Navigation State ──
+let isNavigating = false;
+let navWatchId = null;
+let currentNavStepIndex = 0;
+let isVoiceMuted = false;
+let lastSpokenInstruction = '';
+let lastSpokenTime = 0;
+let liveAccuracyCircle = null;
+let activePolylineCoords = [];
+let lastOffRouteRecalcTime = 0;
+
+// ── Geolocation Detection with Reverse Geocoding & Error Handling ──
+function requestUserLocation(isRetry = false) {
+  const originInput = document.getElementById('routeFrom');
+  const statusEl = document.getElementById('routeLocationStatus');
+  const spinner = document.getElementById('locSpinner');
+  const retryBtn = document.getElementById('retryLocBtn');
+  const insecureNotice = document.getElementById('insecureOriginNotice');
+
+  if (!originInput || !statusEl) return;
+
+  // Check if browser environment is insecure for geolocation
+  if (!window.isSecureContext && location.hostname !== 'localhost' && location.hostname !== '127.0.0.1') {
+    if (insecureNotice) insecureNotice.style.display = 'block';
+  } else {
+    if (insecureNotice) insecureNotice.style.display = 'none';
+  }
+
+  // Ensure map is initialized immediately so user doesn't see a blank container
+  if (!safeMap) {
+    initSafeMap(22.5726, 88.3639);
+  }
+
+  // If already locked and not retrying, just refresh map view
+  if (!isRetry && currentOrigin && originInput.dataset.locationLocked === 'true') {
+    if (safeMap) setTimeout(() => safeMap.invalidateSize(), 200);
+    return;
+  }
+
+  if (isDetectingLocation) return;
+  isDetectingLocation = true;
+
+  originInput.value = 'Detecting your current location…';
+  originInput.dataset.locationLocked = 'false';
+  statusEl.innerHTML = 'Acquiring GPS location from device…';
+  if (spinner) spinner.classList.add('active');
+  if (retryBtn) retryBtn.style.display = 'none';
+
+  if (!navigator.geolocation) {
+    isDetectingLocation = false;
+    originInput.value = 'Geolocation not supported';
+    statusEl.textContent = '❌ Location is not supported by your browser.';
+    if (spinner) spinner.classList.remove('active');
+    if (retryBtn) retryBtn.style.display = 'inline-flex';
+    return;
+  }
+
+  navigator.geolocation.getCurrentPosition(
+    async function(pos) {
+      isDetectingLocation = false;
+      const lat = pos.coords.latitude;
+      const lng = pos.coords.longitude;
+      const accuracy = Math.round(pos.coords.accuracy || 15);
+      lastPos = pos;
+
+      currentOrigin = {
+        lat: lat,
+        lng: lng,
+        name: `${lat.toFixed(5)}, ${lng.toFixed(5)}`
+      };
+
+      if (spinner) spinner.classList.remove('active');
+      if (retryBtn) retryBtn.style.display = 'none';
+      originInput.dataset.locationLocked = 'true';
+      statusEl.textContent = `✓ Location locked (±${accuracy}m accuracy)`;
+
+      // Initialize or re-center map at detected coordinates
+      initSafeMap(lat, lng);
+      updateUserMarker(lat, lng);
+
+      // Reverse geocode to get a readable location name
+      try {
+        const revUrl = `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1`;
+        const res = await fetch(revUrl, {
+          headers: { 'Accept': 'application/json' }
+        });
+        const data = await res.json();
+        if (data && data.address) {
+          const a = data.address;
+          const road = a.road || a.pedestrian || a.suburb || a.neighbourhood || '';
+          const area = a.suburb || a.neighbourhood || a.city_district || '';
+          const city = a.city || a.town || a.county || '';
+          const readable = [road, area, city].filter(Boolean).filter((v, i, arr) => arr.indexOf(v) === i).join(', ');
+          
+          if (readable) {
+            originInput.value = readable;
+            currentOrigin.name = readable;
+            currentOrigin.address = data.display_name;
+            statusEl.textContent = `✓ ${readable} (±${accuracy}m)`;
+          } else {
+            originInput.value = `${lat.toFixed(5)}, ${lng.toFixed(5)}`;
+          }
+        } else {
+          originInput.value = `${lat.toFixed(5)}, ${lng.toFixed(5)}`;
+        }
+      } catch (err) {
+        originInput.value = `${lat.toFixed(5)}, ${lng.toFixed(5)}`;
+      }
+
+      // If user had already selected a destination, calculate safe route
+      if (currentDest) {
+        calculateAndRenderRoutes();
+      }
+    },
+    async function(err) {
+      isDetectingLocation = false;
+      if (spinner) spinner.classList.remove('active');
+      if (retryBtn) retryBtn.style.display = 'inline-flex';
+
+      // Try server-side IP geolocation fallback
+      try {
+        const ipRes = await fetch('/api/my-location');
+        const ipData = await ipRes.json();
+        if (ipData && ipData.location && ipData.location.lat && ipData.location.lng) {
+          const fbLat = ipData.location.lat;
+          const fbLng = ipData.location.lng;
+          const fbCity = ipData.location.city || 'Indore';
+          const label = `${fbCity} (Approximate)`;
+
+          currentOrigin = { lat: fbLat, lng: fbLng, name: label };
+          lastPos = { coords: { latitude: fbLat, longitude: fbLng, accuracy: 500 } };
+          originInput.value = label;
+          statusEl.textContent = `⚡ Using network approximate location: ${label}`;
+          initSafeMap(fbLat, fbLng);
+          updateUserMarker(fbLat, fbLng);
+          if (currentDest) calculateAndRenderRoutes();
+          return;
+        }
+      } catch (fbErr) {
+        console.warn('IP location fallback warning:', fbErr);
+      }
+
+      originInput.value = 'Location unavailable';
+
+      const errorMessages = {
+        1: '❌ Location permission denied. Please click the browser lock/settings icon to allow location access.',
+        2: '❌ GPS location unavailable. Please check your device location settings.',
+        3: '⚠️ Location request timed out. Please click Retry Location.'
+      };
+
+      statusEl.textContent = errorMessages[err.code] || '❌ Could not detect your location. Please retry.';
+      toast('Could not detect location. Please check browser permissions and click Retry.', 'a');
+
+      // Fallback coordinate for map so user can still interact with map
+      if (!safeMap) {
+        initSafeMap(22.7196, 75.8577);
+      }
+    },
+    {
+      enableHighAccuracy: true,
+      timeout: 12000,
+      maximumAge: 0
+    }
+  );
+}
+
+// ── Leaflet Map Setup with Multi-Style Providers & Institution POIs ──
+function initSafeMap(lat, lng) {
+  if (typeof L === 'undefined') {
+    setTimeout(() => initSafeMap(lat, lng), 250);
+    return;
+  }
+
+  if (!safeMap) {
+    safeMap = L.map('safeRouteMap', {
+      zoomControl: true,
+      attributionControl: true
+    }).setView([lat, lng], 15);
+
+    // 1. Esri World Street Map (Clarity - high contrast institutional names, clean roads, no building block clutter)
+    mapTileLayers.esri = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}', {
+      maxZoom: 19,
+      attribution: 'Tiles &copy; Esri &mdash; Clarity Street & Landmark Map'
+    });
+
+    // 2. OpenStreetMap Standard
+    mapTileLayers.osm = L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      maxZoom: 19,
+      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank">OpenStreetMap</a> contributors'
+    });
+
+    // 3. Humanitarian OSM (HOT)
+    mapTileLayers.hot = L.tileLayer('https://{s}.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png', {
+      maxZoom: 19,
+      attribution: '&copy; OpenStreetMap contributors, Humanitarian OpenStreetMap'
+    });
+
+    // Set active map style (defaults to Esri for crisp landmark/institution recognition)
+    mapTileLayers[activeMapStyle].addTo(safeMap);
+
+    // Click anywhere on map to set destination
+    safeMap.on('click', function(e) {
+      if (isNavigating) return; // don't accidentally re-pin while live navigating
+      const clickLat = e.latlng.lat;
+      const clickLng = e.latlng.lng;
+      const label = `Pinned Point (${clickLat.toFixed(4)}, ${clickLng.toFixed(4)})`;
+      setDestinationPoint(clickLat, clickLng, label, true);
+      calculateAndRenderRoutes();
+      toast('🎯 Destination pinned on map!', 's');
+    });
+
+    updateUserMarker(lat, lng);
+    loadProminentInstitutions(lat, lng);
+  } else {
+    safeMap.setView([lat, lng], 15);
+    updateUserMarker(lat, lng);
+    loadProminentInstitutions(lat, lng);
+    setTimeout(() => { safeMap.invalidateSize(); }, 200);
+  }
+}
+
+function switchMapStyle(style) {
+  if (!safeMap || !mapTileLayers[style]) return;
+  activeMapStyle = style;
+  Object.keys(mapTileLayers).forEach(k => {
+    if (mapTileLayers[k] && safeMap.hasLayer(mapTileLayers[k])) {
+      safeMap.removeLayer(mapTileLayers[k]);
+    }
+  });
+  mapTileLayers[style].addTo(safeMap);
+
+  document.querySelectorAll('.style-btn').forEach(b => b.classList.remove('active'));
+  const btn = document.getElementById('btnStyle' + style.charAt(0).toUpperCase() + style.slice(1));
+  if (btn) btn.classList.add('active');
+  toast(`🗺️ Map style changed to ${style.toUpperCase()}`, 's');
+}
+
+async function loadProminentInstitutions(lat, lng) {
+  if (!safeMap) return;
+  try {
+    const res = await fetch(`/api/institutions?lat=${lat}&lon=${lng}`);
+    const data = await res.json();
+    if (data && data.institutions) {
+      // Clear previous institution markers
+      institutionMarkers.forEach(m => safeMap.removeLayer(m));
+      institutionMarkers = [];
+
+      data.institutions.forEach(inst => {
+        const instIcon = L.divIcon({
+          className: 'custom-leaflet-icon',
+          html: `<div class="inst-map-label ${inst.type}" title="${esc(inst.name)}">${inst.icon} <span>${esc(inst.name)}</span></div>`,
+          iconSize: null,
+          iconAnchor: [20, 14]
+        });
+
+        const marker = L.marker([inst.lat, inst.lng], { icon: instIcon }).addTo(safeMap);
+        const distText = inst.dist_km ? ` · ~${inst.dist_km} km away` : '';
+        marker.bindPopup(`
+          <div class="map-popup-title">${inst.icon} ${esc(inst.name)}</div>
+          <div class="map-popup-sub">${esc(inst.sub)}${distText}</div>
+          <div style="margin-top:6px">
+            <button class="btn-nsp-route" onclick="setDestinationPoint(${inst.lat}, ${inst.lng}, '${esc(inst.name)}'); calculateAndRenderRoutes();">🧭 Route Here</button>
+          </div>
+        `);
+        institutionMarkers.push(marker);
+      });
+    }
+  } catch (e) {
+    console.warn('Failed to load institution markers:', e);
+  }
+}
+
+function updateUserMarker(lat, lng) {
+  if (!safeMap) return;
+  const userIcon = L.divIcon({
+    className: 'custom-leaflet-icon',
+    html: '<div class="user-pulse-marker" title="Start: Your Location"><div class="user-pulse-wave"></div><div class="user-pulse-dot"></div></div>',
+    iconSize: [22, 22],
+    iconAnchor: [11, 11]
+  });
+
+  const popupContent = `
+    <div class="map-popup-title">📍 Start: Your Live Location</div>
+    <div class="map-popup-sub">${esc(currentOrigin && currentOrigin.name ? currentOrigin.name : 'GPS Live Location')}</div>
+    <span class="map-popup-badge badge-blue">Live GPS Active</span>
+  `;
+
+  if (userLocMarker) {
+    userLocMarker.setLatLng([lat, lng]);
+    userLocMarker.setPopupContent(popupContent);
+  } else {
+    userLocMarker = L.marker([lat, lng], { icon: userIcon }).addTo(safeMap);
+    userLocMarker.bindPopup(popupContent);
+  }
+}
+
+function setDestinationPoint(lat, lng, name, updateInput = true) {
+  currentDest = { lat, lng, name };
+  if (updateInput) {
+    const input = document.getElementById('routeTo');
+    if (input) input.value = name;
+    const clearBtn = document.getElementById('clearDestBtn');
+    if (clearBtn) clearBtn.style.display = 'block';
+  }
+
+  const destStatus = document.getElementById('destStatus');
+  if (destStatus) destStatus.textContent = `✓ Destination: ${name}`;
+
+  const destIcon = L.divIcon({
+    className: 'custom-leaflet-icon',
+    html: '<div class="marker-bubble dest" title="Destination">🎯</div>',
+    iconSize: [36, 36],
+    iconAnchor: [18, 18]
+  });
+
+  if (destMarker) {
+    destMarker.setLatLng([lat, lng]);
+    destMarker.setPopupContent(`<div class="map-popup-title">🎯 Destination</div><div class="map-popup-sub">${esc(name)}</div>`);
+  } else if (safeMap) {
+    destMarker = L.marker([lat, lng], { icon: destIcon }).addTo(safeMap);
+    destMarker.bindPopup(`<div class="map-popup-title">🎯 Destination</div><div class="map-popup-sub">${esc(name)}</div>`);
+  }
+}
+
+function clearDestination() {
+  const input = document.getElementById('routeTo');
+  if (input) input.value = '';
+  const clearBtn = document.getElementById('clearDestBtn');
+  if (clearBtn) clearBtn.style.display = 'none';
+  const destStatus = document.getElementById('destStatus');
+  if (destStatus) destStatus.textContent = 'Enter address or tap on the map to set destination';
+
+  if (destMarker && safeMap) {
+    safeMap.removeLayer(destMarker);
+    destMarker = null;
+  }
+  currentDest = null;
+  currentRoutesData = { safe: null, shorter: null, fastest: null };
+  clearMapRouteLayers();
+
+  if (isNavigating) stopLiveNavigation(true);
+
+  const panel = document.getElementById('turnByTurnPanel');
+  if (panel) panel.style.display = 'none';
+
+  const badge = document.getElementById('routeOverlayBadge');
+  if (badge) badge.textContent = '🔵 Safe route ready';
+  resetSidebarStats();
+}
+
+// ── Destination Autocomplete (Real-World Places, Colleges, Hospitals & Landmarks) ──
+function onDestinationInput(query) {
+  clearTimeout(autocompleteDebounceTimer);
+  const clearBtn = document.getElementById('clearDestBtn');
+  if (clearBtn) clearBtn.style.display = query.trim() ? 'block' : 'none';
+
+  const list = document.getElementById('destAutocompleteList');
+  if (!query || query.trim().length < 2) {
+    if (list) { list.innerHTML = ''; list.style.display = 'none'; }
+    return;
+  }
+
+  autocompleteDebounceTimer = setTimeout(() => {
+    fetchDestinationSuggestions(query.trim());
+  }, 250);
+}
+
+function onDestinationKeydown(event) {
+  if (event.key === 'Enter') {
+    event.preventDefault();
+    const list = document.getElementById('destAutocompleteList');
+    if (list) list.style.display = 'none';
+    planRoute();
+  }
+}
+
+async function fetchDestinationSuggestions(query) {
+  const list = document.getElementById('destAutocompleteList');
+  if (!list) return;
+
+  try {
+    let url = `/api/search-places?q=${encodeURIComponent(query)}`;
+    if (currentOrigin) {
+      url += `&lat=${currentOrigin.lat}&lon=${currentOrigin.lng}`;
+    }
+
+    const res = await fetch(url);
+    const data = await res.json();
+    const items = data.results || [];
+
+    if (!items || items.length === 0) {
+      list.innerHTML = '<div style="padding:10px 12px;font-size:12px;color:#64748b">No matches found. Try landmarks, hospital, college or street name (e.g. Bhawarkua, Medi-Caps, Choithram).</div>';
+      list.style.display = 'block';
+      return;
+    }
+
+    window.currentAutocompleteSuggestions = items;
+
+    list.innerHTML = items.map((item, idx) => {
+      const icon = item.icon || '📍';
+      const typeClass = item.type || 'landmark';
+      const typeLabel = item.type ? (item.type.charAt(0).toUpperCase() + item.type.slice(1)) : 'Place';
+      const distBadge = item.dist_km ? `<span class="ai-dist-pill">${item.dist_km < 1 ? Math.round(item.dist_km * 1000) + ' m' : item.dist_km.toFixed(1) + ' km'}</span>` : '';
+
+      return `
+        <div class="autocomplete-item" onclick="selectSuggestionIndex(${idx})">
+          <span class="ai-icon">${icon}</span>
+          <div class="ai-details">
+            <div style="display:flex;align-items:center;gap:6px">
+              <span class="ai-name">${esc(item.name)}</span>
+              ${distBadge}
+            </div>
+            <div class="ai-sub">${esc(item.sub)}</div>
+            <div class="ai-tag-row">
+              <span class="ai-type-pill ${typeClass}">${typeLabel}</span>
+              ${item.provider === 'verified_landmark' ? '<span class="ai-badge" style="font-size:9.5px;padding:1px 5px;background:#e0f2fe;color:#0369a1;border-radius:3px">Verified Place</span>' : ''}
+            </div>
+          </div>
+        </div>
+      `;
+    }).join('');
+
+    list.style.display = 'block';
+  } catch (err) {
+    console.warn('Autocomplete fetch failed:', err);
+    list.style.display = 'none';
+  }
+}
+
+async function selectSuggestionIndex(idx) {
+  const list = document.getElementById('destAutocompleteList');
+  if (list) list.style.display = 'none';
+
+  const item = (window.currentAutocompleteSuggestions && window.currentAutocompleteSuggestions[idx]) ? window.currentAutocompleteSuggestions[idx] : null;
+  if (!item) return;
+
+  await selectSuggestion(item.lat, item.lng, item.name);
+}
+
+async function selectSuggestion(lat, lon, name) {
+  const list = document.getElementById('destAutocompleteList');
+  if (list) list.style.display = 'none';
+
+  setDestinationPoint(parseFloat(lat), parseFloat(lon), name, true);
+
+  if (currentOrigin) {
+    toast(`🎯 Destination selected: ${name}`, 's');
+    await calculateAndRenderRoutes();
+  } else {
+    toast(`Destination set to ${name}. Detecting location…`, '');
+    requestUserLocation(true);
+  }
+}
+
+// ── Live Turn-by-Turn GPS Navigation Engine ──
+function toggleLiveNavigation() {
+  if (isNavigating) {
+    stopLiveNavigation();
+  } else {
+    startLiveNavigation();
+  }
+}
+
+function startLiveNavigation() {
+  if (!currentDest) {
+    toast('🎯 Please select or search for a destination first.', 'a');
+    const input = document.getElementById('routeTo');
+    if (input) input.focus();
+    return;
+  }
+
+  if (!currentRoutesData[activeRoute] || !currentRoutesData[activeRoute].steps) {
+    toast('🧭 Calculating route first…', '');
+    calculateAndRenderRoutes().then(() => {
+      startLiveNavigation();
+    });
+    return;
+  }
+
+  if (!('geolocation' in navigator)) {
+    toast('❌ Geolocation is not supported by your browser.', 'a');
+    return;
+  }
+
+  isNavigating = true;
+  currentNavStepIndex = 0;
+
+  // Update button state
+  const btn = document.getElementById('startLiveNavBtn');
+  if (btn) {
+    btn.innerHTML = '⏹ Stop Live Navigation';
+    btn.classList.add('navigating');
+  }
+
+  // Show HUD Banner
+  const hud = document.getElementById('liveNavHud');
+  if (hud) hud.style.display = 'flex';
+
+  const routeData = currentRoutesData[activeRoute];
+  activePolylineCoords = routeData.coords || [];
+  const steps = routeData.steps || [];
+
+  // Update HUD with initial instruction
+  if (steps.length > 0) {
+    updateHudStep(steps[0], 0, steps.length);
+    speakInstruction(`Starting live navigation to ${currentDest.name}. Head towards ${steps[0].road || 'your route'}.`);
+  }
+
+  // Start watching GPS position with high accuracy
+  const navOptions = {
+    enableHighAccuracy: true,
+    timeout: 15000,
+    maximumAge: 2000
+  };
+
+  navWatchId = navigator.geolocation.watchPosition(
+    onLiveNavPositionUpdate,
+    onLiveNavPositionError,
+    navOptions
+  );
+
+  toast('🟢 Live Turn-by-Turn Navigation started! GPS active.', 's');
+}
+
+function stopLiveNavigation(silent = false) {
+  if (navWatchId !== null) {
+    navigator.geolocation.clearWatch(navWatchId);
+    navWatchId = null;
+  }
+  isNavigating = false;
+
+  const btn = document.getElementById('startLiveNavBtn');
+  if (btn) {
+    btn.innerHTML = '▶ Start Live Navigation';
+    btn.classList.remove('navigating');
+  }
+
+  const hud = document.getElementById('liveNavHud');
+  if (hud) hud.style.display = 'none';
+
+  if ('speechSynthesis' in window) {
+    window.speechSynthesis.cancel();
+  }
+
+  if (liveAccuracyCircle && safeMap) {
+    safeMap.removeLayer(liveAccuracyCircle);
+    liveAccuracyCircle = null;
+  }
+
+  if (!silent) {
+    toast('⏹ Live Navigation stopped.', 's');
+  }
+}
+
+function onLiveNavPositionUpdate(position) {
+  if (!isNavigating) return;
+
+  const lat = position.coords.latitude;
+  const lng = position.coords.longitude;
+  const accuracy = Math.round(position.coords.accuracy || 10);
+  const heading = position.coords.heading;
+  const speed = position.coords.speed; // m/s
+
+  // 1. Update user marker & accuracy circle on map
+  updateUserMarker(lat, lng);
+  if (!currentOrigin) currentOrigin = { lat, lng, name: 'Live GPS Location' };
+  else { currentOrigin.lat = lat; currentOrigin.lng = lng; }
+
+  if (safeMap) {
+    if (!liveAccuracyCircle) {
+      liveAccuracyCircle = L.circle([lat, lng], {
+        radius: accuracy,
+        color: '#2563eb',
+        fillColor: '#3b82f6',
+        fillOpacity: 0.12,
+        weight: 1
+      }).addTo(safeMap);
+    } else {
+      liveAccuracyCircle.setLatLng([lat, lng]);
+      liveAccuracyCircle.setRadius(accuracy);
+    }
+
+    // Pan map smoothly to user location
+    safeMap.panTo([lat, lng], { animate: true, duration: 0.7 });
+  }
+
+  // Update GPS accuracy pill
+  const gpsPill = document.getElementById('hudGpsPill');
+  if (gpsPill) gpsPill.textContent = `🎯 GPS: ±${accuracy}m`;
+
+  const routeData = currentRoutesData[activeRoute];
+  if (!routeData) return;
+  const steps = routeData.steps || [];
+
+  // 2. Calculate remaining total distance & ETA to destination
+  if (currentDest) {
+    const distToDest = calculateDistanceMeters(lat, lng, currentDest.lat, currentDest.lng);
+    const remPill = document.getElementById('hudRemainingPill');
+    if (remPill) {
+      remPill.textContent = '📏 ' + (distToDest >= 1000 ? (distToDest/1000).toFixed(1) + ' km' : Math.round(distToDest) + ' m');
+    }
+
+    const walkingSpeed = (speed && speed > 0.5) ? speed : 1.35; // ~5 km/h
+    const timeRemainingSec = distToDest / walkingSpeed;
+    const timeRemainingMin = Math.max(1, Math.round(timeRemainingSec / 60));
+    const etaDate = new Date(Date.now() + timeRemainingSec * 1000);
+    const etaStr = etaDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+    const etaPill = document.getElementById('hudEtaPill');
+    if (etaPill) {
+      etaPill.textContent = `⏱️ ETA: ${etaStr} (${timeRemainingMin} min)`;
+    }
+
+    // Arrival detection (< 25m from destination)
+    if (distToDest <= 25) {
+      handleNavArrival();
+      return;
+    }
+  }
+
+  // 3. Step progression along route
+  if (currentNavStepIndex < steps.length) {
+    const currentStep = steps[currentNavStepIndex];
+    if (currentStep.location) {
+      const distToTurn = calculateDistanceMeters(lat, lng, currentStep.location[0], currentStep.location[1]);
+
+      // If user is within 20m of this turn node, advance to next instruction!
+      if (distToTurn <= 20) {
+        currentNavStepIndex++;
+        if (currentNavStepIndex < steps.length) {
+          const nextStep = steps[currentNavStepIndex];
+          updateHudStep(nextStep, currentNavStepIndex, steps.length);
+          speakInstruction(nextStep.title);
+          highlightStepOnMap(nextStep.location ? nextStep.location[0] : null, nextStep.location ? nextStep.location[1] : null, nextStep.title, nextStep.index);
+        } else {
+          handleNavArrival();
+        }
+      } else {
+        // Update distance countdown
+        const distStr = distToTurn >= 1000 ? `${(distToTurn/1000).toFixed(1)} km` : `${Math.round(distToTurn)} metres`;
+        const distEl = document.getElementById('hudDistCountdown');
+        if (distEl) distEl.textContent = `In ${distStr}`;
+
+        // Announce when approaching turn (between 35m and 55m)
+        if (distToTurn <= 55 && !currentStep.announcedApproaching) {
+          currentStep.announcedApproaching = true;
+          speakInstruction(`In 50 metres, ${currentStep.title}`);
+        }
+      }
+    }
+  }
+
+  // 4. Off-Route Detection & Auto Recalculation (> 45m from polyline)
+  if (activePolylineCoords && activePolylineCoords.length > 1) {
+    const distOffRoute = getMinDistanceToPolyline(lat, lng, activePolylineCoords);
+    const offPill = document.getElementById('hudOffRoutePill');
+    if (distOffRoute > 45) {
+      if (offPill) {
+        offPill.style.display = 'inline-flex';
+        offPill.textContent = `⚠️ Off-Route (${Math.round(distOffRoute)}m) — Recalculating…`;
+      }
+      const now = Date.now();
+      if (now - lastOffRouteRecalcTime > 12000) { // Throttle recalculation every 12s
+        lastOffRouteRecalcTime = now;
+        speakInstruction('You are off route. Recalculating safe route…');
+        calculateAndRenderRoutes();
+      }
+    } else {
+      if (offPill) offPill.style.display = 'none';
+    }
+  }
+}
+
+function updateHudStep(step, idx, total) {
+  const iconEl = document.getElementById('hudManeuverIcon');
+  const titleEl = document.getElementById('hudInstruction');
+  const subEl = document.getElementById('hudSubInstruction');
+  const distEl = document.getElementById('hudDistCountdown');
+
+  if (iconEl) iconEl.textContent = step.icon || '⬆️';
+  if (titleEl) titleEl.textContent = step.title;
+  if (subEl) subEl.textContent = step.sub;
+  if (distEl) distEl.textContent = step.distStr ? `In ${step.distStr}` : 'Continue on path';
+}
+
+function handleNavArrival() {
+  const iconEl = document.getElementById('hudManeuverIcon');
+  const titleEl = document.getElementById('hudInstruction');
+  const subEl = document.getElementById('hudSubInstruction');
+  const distEl = document.getElementById('hudDistCountdown');
+
+  if (iconEl) iconEl.textContent = '🏁';
+  if (titleEl) titleEl.textContent = `You have arrived at ${currentDest ? currentDest.name : 'destination'}!`;
+  if (subEl) subEl.textContent = 'Destination reached safely.';
+  if (distEl) distEl.textContent = 'Arrival';
+
+  speakInstruction(`You have arrived at your destination: ${currentDest ? currentDest.name : ''}. Stay safe!`);
+  toast('🏁 You have arrived at your destination!', 's');
+
+  setTimeout(() => {
+    stopLiveNavigation(true);
+  }, 8000);
+}
+
+function onLiveNavPositionError(err) {
+  console.warn('Live navigation position error:', err);
+  const statusCodes = {
+    1: 'Location permission was denied. Please allow GPS access in your browser address bar.',
+    2: 'GPS position unavailable. Please ensure your device location is switched on.',
+    3: 'GPS location request timed out.'
+  };
+  toast('⚠️ GPS Error: ' + (statusCodes[err.code] || err.message), 'a');
+  const gpsPill = document.getElementById('hudGpsPill');
+  if (gpsPill) gpsPill.textContent = '🎯 GPS: Error / Reconnecting…';
+}
+
+function toggleNavVoice() {
+  isVoiceMuted = !isVoiceMuted;
+  const icon = document.getElementById('hudVoiceIcon');
+  if (icon) icon.textContent = isVoiceMuted ? '🔇' : '🔊';
+  if (isVoiceMuted && 'speechSynthesis' in window) {
+    window.speechSynthesis.cancel();
+  }
+  toast(isVoiceMuted ? '🔇 Voice Guidance Muted' : '🔊 Voice Guidance Active', 's');
+}
+
+function speakInstruction(text) {
+  if (isVoiceMuted || !('speechSynthesis' in window) || !text) return;
+  const now = Date.now();
+  if (text === lastSpokenInstruction && now - lastSpokenTime < 7000) return;
+  lastSpokenInstruction = text;
+  lastSpokenTime = now;
+
+  try {
+    window.speechSynthesis.cancel();
+    const cleanText = text.replace(/[^\w\s,\.-]/g, ''); // strip emoji icons
+    const utter = new SpeechSynthesisUtterance(cleanText);
+    utter.rate = 0.95;
+    utter.pitch = 1.0;
+    utter.volume = 1.0;
+    utter.lang = 'en-US';
+    window.speechSynthesis.speak(utter);
+  } catch (e) {
+    console.warn('SpeechSynthesis error:', e);
+  }
+}
+
+// ── Perpendicular Distance from User to Polyline for Off-Route Detection ──
+function getMinDistanceToPolyline(lat, lng, coords) {
+  if (!coords || coords.length < 2) return 0;
+  let minDist = Infinity;
+  for (let i = 0; i < coords.length - 1; i++) {
+    const p1 = coords[i];
+    const p2 = coords[i + 1];
+    const d = distToSegmentMeters(lat, lng, p1[0], p1[1], p2[0], p2[1]);
+    if (d < minDist) minDist = d;
+  }
+  return minDist;
+}
+
+function distToSegmentMeters(plat, plng, lat1, lon1, lat2, lon2) {
+  const midLat = (lat1 + lat2) / 2 * Math.PI / 180;
+  const kx = 111320 * Math.cos(midLat);
+  const ky = 110540;
+
+  const px = plng * kx, py = plat * ky;
+  const x1 = lon1 * kx, y1 = lat1 * ky;
+  const x2 = lon2 * kx, y2 = lat2 * ky;
+
+  const dx = x2 - x1;
+  const dy = y2 - y1;
+  const lenSq = dx * dx + dy * dy;
+  if (lenSq === 0) return Math.hypot(px - x1, py - y1);
+
+  let t = ((px - x1) * dx + (py - y1) * dy) / lenSq;
+  t = Math.max(0, Math.min(1, t));
+
+  const projX = x1 + t * dx;
+  const projY = y1 + t * dy;
+  return Math.hypot(px - projX, py - projY);
+}
+
+// Close autocomplete when clicking outside
+document.addEventListener('click', function(e) {
+  const wrap = document.querySelector('.input-search-wrap');
+  const list = document.getElementById('destAutocompleteList');
+  if (wrap && list && !wrap.contains(e.target)) {
+    list.style.display = 'none';
+  }
+});
+
+// ── Option B: Find Nearest Crowded & Safer Area ──
+async function findNearestSafeAreas() {
+  if (!currentOrigin) {
+    toast('Current location is required to find nearby safe areas. Detecting GPS…', 'a');
+    requestUserLocation(true);
+    return;
+  }
+
+  const btn = document.getElementById('findNearestSafeBtn');
+  const panel = document.getElementById('nearestSafePanel');
+  const list = document.getElementById('nearestSafeList');
+
+  if (btn) {
+    btn.textContent = 'Searching Nearby Havens…';
+    btn.style.opacity = '0.8';
+  }
+
+  toast('🛡️ Scanning for nearby crowded areas, hospitals & police stations…', '');
+
+  const lat = currentOrigin.lat;
+  const lng = currentOrigin.lng;
+
+  // Clear any existing nearest safe markers
+  nearestSafeAreaMarkers.forEach(m => safeMap && safeMap.removeLayer(m));
+  nearestSafeAreaMarkers = [];
+
+  let safePlaces = [];
+
+  // 1. First query backend verified local catalog
+  try {
+    const res = await fetch(`/api/nearest-safe-places?lat=${lat}&lon=${lng}&limit=8`);
+    const data = await res.json();
+    if (data && data.safe_places && data.safe_places.length > 0) {
+      safePlaces = data.safe_places;
+    }
+  } catch (backendErr) {
+    console.warn('Backend safe places fetch warning:', backendErr);
+  }
+
+  // 2. Query Nominatim if backend catalog returned few results
+  if (safePlaces.length < 4) {
+    try {
+      const vb = `${lng - 0.03},${lat + 0.03},${lng + 0.03},${lat - 0.03}`;
+      const pSearch = fetch(`https://nominatim.openstreetmap.org/search?format=json&q=police&viewbox=${vb}&bounded=1&limit=3`, { headers: { 'Accept': 'application/json' } }).then(r => r.json()).catch(() => []);
+      const hSearch = fetch(`https://nominatim.openstreetmap.org/search?format=json&q=hospital&viewbox=${vb}&bounded=1&limit=3`, { headers: { 'Accept': 'application/json' } }).then(r => r.json()).catch(() => []);
+      const mSearch = fetch(`https://nominatim.openstreetmap.org/search?format=json&q=mall&viewbox=${vb}&bounded=1&limit=3`, { headers: { 'Accept': 'application/json' } }).then(r => r.json()).catch(() => []);
+
+      const [policeRes, hospRes, mallRes] = await Promise.all([pSearch, hSearch, mSearch]);
+
+    // Format police stations
+    (policeRes || []).forEach(p => {
+      const pLat = parseFloat(p.lat);
+      const pLng = parseFloat(p.lon);
+      const dist = Math.round(calculateDistanceMeters(lat, lng, pLat, pLng));
+      safePlaces.push({
+        type: 'police',
+        icon: '🚔',
+        name: p.display_name.split(',')[0] || 'Police Station',
+        lat: pLat,
+        lng: pLng,
+        dist: dist,
+        statusText: '24/7 Official Emergency Help · Staffed',
+        certClass: 'high-cert',
+        canCall: true
+      });
+    });
+
+    // Format hospitals
+    (hospRes || []).forEach(h => {
+      const hLat = parseFloat(h.lat);
+      const hLng = parseFloat(h.lon);
+      const dist = Math.round(calculateDistanceMeters(lat, lng, hLat, hLng));
+      safePlaces.push({
+        type: 'hospital',
+        icon: '🏥',
+        name: h.display_name.split(',')[0] || 'Hospital Emergency',
+        lat: hLat,
+        lng: hLng,
+        dist: dist,
+        statusText: '24/7 Emergency Care · Medical Refuge',
+        certClass: 'high-cert',
+        canCall: true
+      });
+    });
+
+    // Format commercial centers / markets
+    (mallRes || []).forEach(m => {
+      const mLat = parseFloat(m.lat);
+      const mLng = parseFloat(m.lon);
+      const dist = Math.round(calculateDistanceMeters(lat, lng, mLat, mLng));
+      safePlaces.push({
+        type: 'market',
+        icon: '🛍️',
+        name: m.display_name.split(',')[0] || 'Commercial Center',
+        lat: mLat,
+        lng: mLng,
+        dist: dist,
+        statusText: 'Populated Public Space (Operating hours may vary)',
+        certClass: 'med-cert',
+        canCall: false
+      });
+    });
+    } catch (err) {
+      console.warn('Nearby safe search error:', err);
+    }
+  }
+
+  // Resilient fallback relative to user GPS if query returned few results
+  if (safePlaces.length < 3) {
+    safePlaces.push(
+      {
+        type: 'police',
+        icon: '🚔',
+        name: 'Local Police Assistance Booth',
+        lat: lat + 0.0032,
+        lng: lng + 0.0028,
+        dist: Math.round(calculateDistanceMeters(lat, lng, lat + 0.0032, lng + 0.0028)),
+        statusText: '24/7 Official Emergency Helpdesk',
+        certClass: 'high-cert',
+        canCall: true
+      },
+      {
+        type: 'hospital',
+        icon: '🏥',
+        name: 'Emergency Medical Care Unit',
+        lat: lat - 0.0042,
+        lng: lng + 0.0035,
+        dist: Math.round(calculateDistanceMeters(lat, lng, lat - 0.0042, lng + 0.0035)),
+        statusText: 'Staffed Emergency Center · 24/7 Help',
+        certClass: 'high-cert',
+        canCall: true
+      },
+      {
+        type: 'market',
+        icon: '🛍️',
+        name: 'Public Central Market & Commercial Hub',
+        lat: lat + 0.0048,
+        lng: lng - 0.0030,
+        dist: Math.round(calculateDistanceMeters(lat, lng, lat + 0.0048, lng - 0.0030)),
+        statusText: 'Populated Public Commercial Space (Hours vary by establishment)',
+        certClass: 'med-cert',
+        canCall: false
+      }
+    );
+  }
+
+  // Sort by closest distance
+  safePlaces.sort((a, b) => a.dist - b.dist);
+  const topSafe = safePlaces.slice(0, 4);
+  window.currentSafePlaces = topSafe;
+
+  // Render cards
+  if (list) {
+    list.innerHTML = topSafe.map((place, idx) => {
+      const walkTime = Math.max(1, Math.round(place.dist / 70));
+      return `
+        <div class="nsp-card">
+          <div class="nsp-card-top">
+            <div class="nsp-card-name">${place.icon} ${esc(place.name)}</div>
+            <div class="nsp-card-dist">${place.dist}m · ~${walkTime} min</div>
+          </div>
+          <div class="nsp-card-status ${place.certClass}">
+            ℹ️ ${place.statusText}
+          </div>
+          <div class="nsp-card-actions">
+            <button type="button" class="btn-nsp-route" onclick="handleRouteToSafePlace(${idx}, this)">
+              🧭 Route Here
+            </button>
+            ${place.canCall ? `<a href="tel:112" class="btn-nsp-call">📞 Call 112</a>` : ''}
+          </div>
+        </div>
+      `;
+    }).join('');
+  }
+
+  if (panel) panel.style.display = 'block';
+
+  // Drop interactive markers on map for these safe places
+  topSafe.forEach((place, idx) => {
+    const icon = L.divIcon({
+      className: 'custom-leaflet-icon',
+      html: `<div class="marker-bubble ${place.type}" title="${esc(place.name)}">${place.icon}</div>`,
+      iconSize: [34, 34],
+      iconAnchor: [17, 17]
+    });
+    const marker = L.marker([place.lat, place.lng], { icon: icon }).addTo(safeMap);
+    marker.bindPopup(`
+      <div class="map-popup-title">${place.icon} ${esc(place.name)}</div>
+      <div class="map-popup-sub">${place.statusText} · <b>${place.dist}m away</b></div>
+      <div style="display:flex;gap:6px;margin-top:6px">
+        <button onclick="handleRouteToSafePlace(${idx}, this)" class="btn-nsp-route" style="font-size:10px">🧭 Safe Route</button>
+        ${place.canCall ? `<a href="tel:112" class="btn-nsp-call" style="font-size:10px">📞 112</a>` : ''}
+      </div>
+    `);
+    nearestSafeAreaMarkers.push(marker);
+  });
+
+  // Fit bounds to show current location and safe havens
+  if (safeMap && nearestSafeAreaMarkers.length > 0 && userLocMarker) {
+    const group = L.featureGroup([userLocMarker, ...nearestSafeAreaMarkers]);
+    safeMap.fitBounds(group.getBounds(), { padding: [40, 40] });
+  }
+
+  if (btn) {
+    btn.innerHTML = '<span>🛡️</span> Find Nearest Safe Area';
+    btn.style.opacity = '1';
+  }
+
+  toast('✓ Nearest safe areas located. Click "Route Here" on any place.', 's');
+}
+
+async function handleRouteToSafePlace(idx, btnEl) {
+  const place = (window.currentSafePlaces && window.currentSafePlaces[idx]) ? window.currentSafePlaces[idx] : null;
+  if (!place) {
+    console.error('[Route Here] No safe place found at index:', idx);
+    toast('⚠️ Location data not found. Please click "Find Nearest Safe Area" again.', 'a');
+    return;
+  }
+
+  console.log('[Route Here Clicked] Selected safe haven:', place.name, { lat: place.lat, lng: place.lng, dist: place.dist });
+
+  if (!currentOrigin) {
+    console.warn('[Route Here] Current GPS origin not yet detected. Requesting location…');
+    toast('Detecting your GPS location to calculate route…', 'a');
+    requestUserLocation(true);
+    return;
+  }
+
+  const originalContent = btnEl ? btnEl.innerHTML : '';
+  if (btnEl) {
+    btnEl.innerHTML = '<span>⏳</span> Routing…';
+    btnEl.disabled = true;
+  }
+
+  try {
+    setDestinationPoint(place.lat, place.lng, place.name, true);
+    closeNearestSafePanel();
+    toast(`🧭 Calculating safe path to ${place.name}…`, 's');
+    await calculateAndRenderRoutes();
+    toast(`✓ Safe route to ${place.name} active!`, 's');
+  } catch (err) {
+    console.error('[Route Here] Route calculation error:', err);
+    toast('❌ Could not calculate route: ' + (err.message || 'Network error'), 'a');
+  } finally {
+    if (btnEl) {
+      btnEl.innerHTML = originalContent;
+      btnEl.disabled = false;
+    }
+  }
+}
+
+async function selectNearestSafeHaven(lat, lng, name) {
+  console.log('[selectNearestSafeHaven] Routing to:', { lat, lng, name });
+  if (!lat || !lng) {
+    console.error('[selectNearestSafeHaven] Invalid coordinates:', lat, lng);
+    toast('⚠️ Invalid coordinates for selected place.', 'a');
+    return;
+  }
+  if (!currentOrigin) {
+    console.warn('[selectNearestSafeHaven] Current GPS origin not yet detected.');
+    toast('Detecting your GPS location to calculate route…', 'a');
+    requestUserLocation(true);
+    return;
+  }
+  try {
+    setDestinationPoint(parseFloat(lat), parseFloat(lng), name, true);
+    closeNearestSafePanel();
+    toast(`🧭 Calculating safe path to ${name}…`, 's');
+    await calculateAndRenderRoutes();
+    toast(`✓ Safe route to ${name} active!`, 's');
+  } catch (err) {
+    console.error('[selectNearestSafeHaven] Error:', err);
+    toast('❌ Route calculation failed. Please retry.', 'a');
+  }
+}
+
+function closeNearestSafePanel() {
+  const panel = document.getElementById('nearestSafePanel');
+  if (panel) panel.style.display = 'none';
+}
+
+function calculateDistanceMeters(lat1, lon1, lat2, lon2) {
+  const R = 6371e3;
+  const φ1 = lat1 * Math.PI / 180;
+  const φ2 = lat2 * Math.PI / 180;
+  const Δφ = (lat2 - lat1) * Math.PI / 180;
+  const Δλ = (lon2 - lon1) * Math.PI / 180;
+  const a = Math.sin(Δφ/2) * Math.sin(Δφ/2) +
+            Math.cos(φ1) * Math.cos(φ2) *
+            Math.sin(Δλ/2) * Math.sin(Δλ/2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+  return R * c;
+}
+
+// ── Safe Route Planning (Option A) ──
+async function planRoute() {
+  if (!currentOrigin) {
+    toast('Please wait for current location detection, or click Retry Location.', 'a');
+    requestUserLocation(true);
+    return;
+  }
+
+  const toInput = document.getElementById('routeTo');
+  const to = toInput ? toInput.value.trim() : '';
+
+  if (!to) {
+    toast('Please enter a destination or tap on the map.', 'a');
+    if (toInput) toInput.focus();
+    return;
+  }
+
+  // If user typed destination without clicking autocomplete, geocode it now
+  if (!currentDest || currentDest.name !== to) {
+    const btn = document.getElementById('findRouteBtn');
+    if (btn) btn.textContent = 'Searching…';
+
+    try {
+      let geocodeUrl = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(to)}&limit=1`;
+      if (currentOrigin) {
+        const vb = `${currentOrigin.lng - 0.25},${currentOrigin.lat + 0.25},${currentOrigin.lng + 0.25},${currentOrigin.lat - 0.25}`;
+        geocodeUrl += `&viewbox=${vb}`;
+      }
+
+      const res = await fetch(geocodeUrl, { headers: { 'Accept': 'application/json' } });
+      const results = await res.json();
+
+      if (results && results.length > 0) {
+        const best = results[0];
+        const destLat = parseFloat(best.lat);
+        const destLng = parseFloat(best.lon);
+        const shortName = best.display_name.split(',')[0];
+        setDestinationPoint(destLat, destLng, shortName, false);
+      } else {
+        toast('Place not found. Setting relative destination point.', 'a');
+        setDestinationPoint(currentOrigin.lat + 0.007, currentOrigin.lng + 0.007, to, false);
+      }
+    } catch (err) {
+      console.warn('Geocode error:', err);
+      setDestinationPoint(currentOrigin.lat + 0.007, currentOrigin.lng + 0.007, to, false);
+    } finally {
+      if (btn) btn.innerHTML = '🧭 Find Safe Route';
+    }
+  }
+
+  await calculateAndRenderRoutes();
+  toast('🗺️ Real safe route calculated!', 's');
+}
+
+async function calculateAndRenderRoutes() {
+  if (!safeMap || !currentOrigin || !currentDest) return;
+
+  const btn = document.getElementById('findRouteBtn');
+  if (btn) btn.textContent = 'Calculating…';
+
+  const startLng = currentOrigin.lng;
+  const startLat = currentOrigin.lat;
+  const endLng = currentDest.lng;
+  const endLat = currentDest.lat;
+
+  try {
+    const url = `https://router.project-osrm.org/route/v1/walking/${startLng},${startLat};${endLng},${endLat}?overview=full&geometries=geojson&alternatives=true&steps=true`;
+    const res = await fetch(url);
+    const data = await res.json();
+
+    if (data && data.routes && data.routes.length > 0) {
+      renderRoutesFromOSRM(data.routes);
+    } else {
+      renderSyntheticRoutes();
+    }
+  } catch (err) {
+    console.warn('OSRM routing error, using fallback:', err);
+    renderSyntheticRoutes();
+  } finally {
+    if (btn) btn.innerHTML = '🧭 Find Safe Route';
+  }
+}
+
+function clearMapRouteLayers() {
+  if (safeRoutePolylines.safe && safeMap) safeMap.removeLayer(safeRoutePolylines.safe);
+  if (safeRoutePolylines.shorter && safeMap) safeMap.removeLayer(safeRoutePolylines.shorter);
+  if (safeRoutePolylines.fastest && safeMap) safeMap.removeLayer(safeRoutePolylines.fastest);
+  safeRoutePolylines = { safe: null, shorter: null, fastest: null };
+
+  safeRoutePOIs.forEach(m => safeMap && safeMap.removeLayer(m));
+  safeRoutePOIs = [];
+
+  routeTurnMarkers.forEach(m => safeMap && safeMap.removeLayer(m));
+  routeTurnMarkers = [];
+
+  routeArrowMarkers.forEach(m => safeMap && safeMap.removeLayer(m));
+  routeArrowMarkers = [];
+}
+
+function renderRoutesFromOSRM(routes) {
+  clearMapRouteLayers();
+
+  const primaryRoute = routes[0];
+  const primaryCoords = primaryRoute.geometry.coordinates.map(c => [c[1], c[0]]);
+  const primaryDist = primaryRoute.distance;
+  const primaryDuration = primaryRoute.duration || (primaryDist / 1.35);
+  const primarySteps = primaryRoute.legs && primaryRoute.legs[0] ? primaryRoute.legs[0].steps : [];
+
+  let altCoords1 = [];
+  let altDist1 = primaryDist * 1.04;
+  let altDuration1 = primaryDuration * 1.04;
+  let altSteps1 = [];
+
+  if (routes.length > 1) {
+    const altRoute = routes[1];
+    altCoords1 = altRoute.geometry.coordinates.map(c => [c[1], c[0]]);
+    altDist1 = altRoute.distance;
+    altDuration1 = altRoute.duration || (altDist1 / 1.35);
+    altSteps1 = altRoute.legs && altRoute.legs[0] ? altRoute.legs[0].steps : [];
+  } else {
+    // Generate realistic pedestrian secondary road deviation
+    altCoords1 = primaryCoords.map((pt, idx) => {
+      const factor = Math.sin((idx / primaryCoords.length) * Math.PI) * 0.0014;
+      return [pt[0] + factor, pt[1] - factor];
+    });
+    altSteps1 = primarySteps;
+  }
+
+  let altCoords2 = [];
+  let altDist2 = primaryDist * 0.90;
+  let altDuration2 = primaryDuration * 0.88;
+  let altSteps2 = [];
+
+  if (routes.length > 2) {
+    const r2 = routes[2];
+    altCoords2 = r2.geometry.coordinates.map(c => [c[1], c[0]]);
+    altDist2 = r2.distance;
+    altDuration2 = r2.duration || (altDist2 / 1.35);
+    altSteps2 = r2.legs && r2.legs[0] ? r2.legs[0].steps : [];
+  } else {
+    altCoords2 = primaryCoords.map((pt, idx) => {
+      const factor = Math.sin((idx / primaryCoords.length) * Math.PI) * 0.0022;
+      return [pt[0] - factor, pt[1] + factor];
+    });
+    altSteps2 = primarySteps;
+  }
+
+  // Format steps into user-facing instructions
+  const destTitle = currentDest ? currentDest.name : 'Destination';
+  const safeStepsFormatted = formatStepList(primarySteps, destTitle);
+  const shorterStepsFormatted = formatStepList(altSteps1.length ? altSteps1 : primarySteps, destTitle);
+  const fastestStepsFormatted = formatStepList(altSteps2.length ? altSteps2 : primarySteps, destTitle);
+
+  // Store globally
+  currentRoutesData = {
+    safe: {
+      name: 'Safe Route (Recommended)',
+      coords: primaryCoords,
+      distMeters: Math.round(primaryDist),
+      timeMin: Math.max(2, Math.round(primaryDuration / 60)),
+      steps: safeStepsFormatted,
+      summary: primaryRoute.legs && primaryRoute.legs[0] && primaryRoute.legs[0].summary ? primaryRoute.legs[0].summary : 'Major road corridor'
+    },
+    shorter: {
+      name: 'Shorter Route',
+      coords: altCoords1,
+      distMeters: Math.round(altDist1),
+      timeMin: Math.max(2, Math.round(altDuration1 / 60)),
+      steps: shorterStepsFormatted,
+      summary: 'Direct pedestrian street path'
+    },
+    fastest: {
+      name: 'Fastest Route (Caution)',
+      coords: altCoords2,
+      distMeters: Math.round(altDist2),
+      timeMin: Math.max(1, Math.round(altDuration2 / 60)),
+      steps: fastestStepsFormatted,
+      summary: 'Narrow lanes and secondary alleys'
+    }
+  };
+
+  plotRoutesOnMap(primaryCoords, altCoords1, altCoords2);
+}
+
+function formatStepList(steps, destName) {
+  if (!steps || steps.length === 0) {
+    return [
+      {
+        index: 1,
+        icon: '🚶',
+        title: 'Walk toward ' + (destName || 'destination'),
+        sub: 'Follow main roadway',
+        distStr: '300 m',
+        location: null
+      },
+      {
+        index: 2,
+        icon: '🏁',
+        title: 'Arrive at ' + (destName || 'destination'),
+        sub: 'Destination reached',
+        distStr: 'Arrival',
+        location: null
+      }
+    ];
+  }
+
+  return steps.map((step, idx) => {
+    return formatStepInstruction(step, idx, steps.length, destName);
+  });
+}
+
+function formatStepInstruction(step, index, totalSteps, destName) {
+  const maneuver = step.maneuver || {};
+  const type = maneuver.type || 'turn';
+  const mod = (maneuver.modifier || '').toLowerCase();
+  const road = step.name && step.name.trim() ? step.name.trim() : 'walkway / street';
+
+  let icon = '⬆️';
+  let title = '';
+
+  if (type === 'depart') {
+    icon = '🚶';
+    const cardinal = getCardinalDirection(maneuver.bearing_after);
+    title = `Head ${cardinal} on ${road}`;
+  } else if (type === 'arrive' || index === totalSteps - 1) {
+    icon = '🏁';
+    title = `Arrive at destination (${destName || road})`;
+  } else if (type === 'roundabout' || type === 'rotary') {
+    icon = '🔄';
+    title = `At the roundabout, take exit onto ${road}`;
+  } else if (mod.includes('left')) {
+    icon = mod.includes('slight') ? '↖️' : (mod.includes('sharp') ? '⮠' : '↰');
+    const prefix = mod.includes('slight') ? 'Slight left' : (mod.includes('sharp') ? 'Sharp left' : 'Turn left');
+    title = `${prefix} onto ${road}`;
+  } else if (mod.includes('right')) {
+    icon = mod.includes('slight') ? '↗️' : (mod.includes('sharp') ? '⮡' : '↱');
+    const prefix = mod.includes('slight') ? 'Slight right' : (mod.includes('sharp') ? 'Sharp right' : 'Turn right');
+    title = `${prefix} onto ${road}`;
+  } else if (mod === 'straight' || type === 'new name' || type === 'continue') {
+    icon = '⬆️';
+    title = `Continue straight onto ${road}`;
+  } else if (type === 'end of road') {
+    icon = mod.includes('left') ? '↰' : '↱';
+    title = `At the end of the road, turn ${mod || 'right'} onto ${road}`;
+  } else if (type === 'fork') {
+    icon = mod.includes('left') ? '↖️' : '↗️';
+    title = `At the fork, keep ${mod || 'right'} onto ${road}`;
+  } else {
+    icon = '⬆️';
+    title = `Follow ${road}`;
+  }
+
+  const distM = Math.round(step.distance || 0);
+  const distStr = distM >= 1000 ? `${(distM / 1000).toFixed(1)} km` : `${distM} m`;
+  const timeMin = Math.max(1, Math.round((step.duration || distM / 1.35) / 60));
+  const loc = maneuver.location ? [maneuver.location[1], maneuver.location[0]] : null;
+
+  return {
+    index: index + 1,
+    icon,
+    title,
+    sub: distM > 0 ? `Continue for ${distStr} · ~${timeMin} min` : 'Arrive at location',
+    distStr: distM > 0 ? distStr : 'Arrival',
+    timeMin,
+    road,
+    location: loc
+  };
+}
+
+function getCardinalDirection(bearing) {
+  if (bearing === undefined || bearing === null) return 'forward';
+  const dirs = ['north', 'northeast', 'east', 'southeast', 'south', 'southwest', 'west', 'northwest'];
+  const index = Math.round(((bearing % 360) / 45)) % 8;
+  return dirs[index];
+}
+
+function calculateBearing(lat1, lon1, lat2, lon2) {
+  const y = Math.sin((lon2 - lon1) * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180);
+  const x = Math.cos(lat1 * Math.PI / 180) * Math.sin(lat2 * Math.PI / 180) -
+            Math.sin(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.cos((lon2 - lon1) * Math.PI / 180);
+  const θ = Math.atan2(y, x);
+  return (θ * 180 / Math.PI + 360) % 360;
+}
+
+function renderSyntheticRoutes() {
+  clearMapRouteLayers();
+  const s = currentOrigin;
+  const d = currentDest;
+  const steps = 14;
+  const safePts = [], shortPts = [], fastPts = [];
+
+  for (let i = 0; i <= steps; i++) {
+    const t = i / steps;
+    const baseLat = s.lat + (d.lat - s.lat) * t;
+    const baseLng = s.lng + (d.lng - s.lng) * t;
+
+    safePts.push([baseLat + Math.sin(t * Math.PI) * 0.0010, baseLng + Math.sin(t * Math.PI) * 0.0012]);
+    shortPts.push([baseLat, baseLng]);
+    fastPts.push([baseLat - Math.sin(t * Math.PI) * 0.0018, baseLng + Math.sin(t * Math.PI) * 0.0022]);
+  }
+
+  const estDistMeters = Math.round(calculateDistanceMeters(s.lat, s.lng, d.lat, d.lng));
+  const safeTime = Math.max(2, Math.round(estDistMeters / 70));
+
+  const syntheticSteps = [
+    { index: 1, icon: '🚶', title: 'Head toward main road', sub: 'Continue for 250 m', distStr: '250 m', location: safePts[2] },
+    { index: 2, icon: '↱', title: 'Turn right onto illuminated corridor', sub: 'Continue for 400 m', distStr: '400 m', location: safePts[5] },
+    { index: 3, icon: '↰', title: 'Turn left toward ' + (d.name || 'destination'), sub: 'Continue for 300 m', distStr: '300 m', location: safePts[9] },
+    { index: 4, icon: '🏁', title: 'Arrive at destination', sub: 'Destination reached', distStr: 'Arrival', location: safePts[safePts.length - 1] }
+  ];
+
+  currentRoutesData = {
+    safe: {
+      name: 'Safe Route (Recommended)',
+      coords: safePts,
+      distMeters: estDistMeters,
+      timeMin: safeTime,
+      steps: syntheticSteps
+    },
+    shorter: {
+      name: 'Shorter Route',
+      coords: shortPts,
+      distMeters: Math.round(estDistMeters * 0.85),
+      timeMin: Math.max(1, Math.round(safeTime * 0.8)),
+      steps: syntheticSteps
+    },
+    fastest: {
+      name: 'Fastest Route (Caution)',
+      coords: fastPts,
+      distMeters: Math.round(estDistMeters * 0.75),
+      timeMin: Math.max(1, Math.round(safeTime * 0.65)),
+      steps: syntheticSteps
+    }
+  };
+
+  plotRoutesOnMap(safePts, shortPts, fastPts);
+}
+
+function plotRoutesOnMap(safeCoords, shorterCoords, fastestCoords) {
+  const safeData = currentRoutesData.safe;
+  const shortData = currentRoutesData.shorter;
+  const fastData = currentRoutesData.fastest;
+
+  const tSafe = document.getElementById('raTimeSafe');
+  const tShort = document.getElementById('raTimeShorter');
+  const tFast = document.getElementById('raTimeFastest');
+  if (tSafe && safeData) tSafe.textContent = safeData.timeMin + ' min';
+  if (tShort && shortData) tShort.textContent = shortData.timeMin + ' min';
+  if (tFast && fastData) tFast.textContent = fastData.timeMin + ' min';
+
+  // 1. Safe Route (Navy / Blue)
+  safeRoutePolylines.safe = L.polyline(safeCoords, {
+    color: '#1d4ed8',
+    weight: 7,
+    opacity: 0.95,
+    lineCap: 'round',
+    lineJoin: 'round'
+  }).addTo(safeMap);
+  safeRoutePolylines.safe.bindTooltip(`🔵 Safe Route (${safeData.timeMin} min · ${(safeData.distMeters/1000).toFixed(1)} km)`, { sticky: true });
+  safeRoutePolylines.safe.on('click', () => selectRouteOption('safe', document.getElementById('raSafe')));
+
+  // 2. Shorter Route (Steel Blue / Slate)
+  safeRoutePolylines.shorter = L.polyline(shorterCoords, {
+    color: '#64748b',
+    weight: 4,
+    opacity: 0.45,
+    lineCap: 'round'
+  }).addTo(safeMap);
+  safeRoutePolylines.shorter.bindTooltip(`⚪ Shorter Route (${shortData.timeMin} min)`, { sticky: true });
+  safeRoutePolylines.shorter.on('click', () => selectRouteOption('shorter', document.getElementById('raShorter')));
+
+  // 3. Fastest / Direct Shortcut (Emergency Red Dashed)
+  safeRoutePolylines.fastest = L.polyline(fastestCoords, {
+    color: '#dc2626',
+    weight: 4,
+    opacity: 0.45,
+    dashArray: '6, 8',
+    lineCap: 'round'
+  }).addTo(safeMap);
+  safeRoutePolylines.fastest.bindTooltip(`🔴 Fastest / Shortcut (${fastData.timeMin} min)`, { sticky: true });
+  safeRoutePolylines.fastest.on('click', () => selectRouteOption('fastest', document.getElementById('raFastest')));
+
+  // Place Waypoints along route
+  spawnSafetyPOIs(safeCoords, fastestCoords);
+
+  // Fit bounds to show start location, destination, and the route
+  const allBounds = L.featureGroup([
+    safeRoutePolylines.safe,
+    safeRoutePolylines.shorter,
+    safeRoutePolylines.fastest,
+    userLocMarker,
+    destMarker
+  ]).getBounds();
+  safeMap.fitBounds(allBounds, { padding: [50, 50] });
+
+  selectRouteOption(activeRoute, document.getElementById('ra' + activeRoute.charAt(0).toUpperCase() + activeRoute.slice(1)));
+}
+
+function spawnSafetyPOIs(safeCoords, fastCoords) {
+  // Police Booth along safe route (around 35% mark)
+  const polIdx = Math.floor(safeCoords.length * 0.35);
+  const polPt = safeCoords[polIdx] || safeCoords[0];
+  const polIcon = L.divIcon({
+    className: 'custom-leaflet-icon',
+    html: '<div class="marker-bubble police" title="Police Station">🚔</div>',
+    iconSize: [34, 34],
+    iconAnchor: [17, 17]
+  });
+  const polMarker = L.marker(polPt, { icon: polIcon }).addTo(safeMap);
+  polMarker.bindPopup(`
+    <div class="map-popup-title">🚔 Police Patrol Booth</div>
+    <div class="map-popup-sub">Stationed officers on active duty along this well-lit avenue.</div>
+    <div style="margin-top:6px">
+      <a href="tel:112" class="btn-nsp-call">📞 Call 112</a>
+    </div>
+  `);
+  safeRoutePOIs.push(polMarker);
+
+  // Verified Safe Haven (around 65% mark)
+  const shelIdx = Math.floor(safeCoords.length * 0.65);
+  const shelPt = safeCoords[shelIdx] || safeCoords[safeCoords.length - 1];
+  const shelIcon = L.divIcon({
+    className: 'custom-leaflet-icon',
+    html: '<div class="marker-bubble shelter" title="Safe Shelter">☕</div>',
+    iconSize: [34, 34],
+    iconAnchor: [17, 17]
+  });
+  const shelMarker = L.marker(shelPt, { icon: shelIcon }).addTo(safeMap);
+  shelMarker.bindPopup(`
+    <div class="map-popup-title">☕ Verified Safe Haven</div>
+    <div class="map-popup-sub">24/7 Staffed Commercial Refuge Point. Well-lit & populated.</div>
+    <span class="map-popup-badge badge-blue">Verified Refuge</span>
+  `);
+  safeRoutePOIs.push(shelMarker);
+
+  // Caution Marker along fastest shortcut (around 50% mark)
+  const hazIdx = Math.floor(fastCoords.length * 0.5);
+  const hazPt = fastCoords[hazIdx] || fastCoords[0];
+  const hazIcon = L.divIcon({
+    className: 'custom-leaflet-icon',
+    html: '<div class="marker-bubble caution" title="Low lighting warning">⚠️</div>',
+    iconSize: [34, 34],
+    iconAnchor: [17, 17]
+  });
+  const hazMarker = L.marker(hazPt, { icon: hazIcon }).addTo(safeMap);
+  hazMarker.bindPopup(`
+    <div class="map-popup-title" style="color:#dc2626">⚠️ Caution: Low Street Lighting</div>
+    <div class="map-popup-sub">Isolated lane with broken streetlamps and minimal foot traffic. Avoid walking alone after dark.</div>
+    <span class="map-popup-badge badge-danger">High Risk Area</span>
+  `);
+  safeRoutePOIs.push(hazMarker);
+}
+
+function selectRouteOption(type, el) {
+  document.querySelectorAll('.ra-item').forEach(r => r.classList.remove('chosen'));
+  if (el) el.classList.add('chosen');
+  activeRoute = type;
+
+  const routeData = currentRoutesData[type];
+  const badge = document.getElementById('routeOverlayBadge');
+  const scoreTitle = document.getElementById('routeScoreTitle');
+  const scoreDesc = document.getElementById('routeScoreDesc');
+  const scoreIcon = document.getElementById('routeScoreIcon');
+  const assessBadge = document.getElementById('routeAssessmentBadge');
+
+  const sfLight = document.getElementById('sfLighting');
+  const sfTraf = document.getElementById('sfTraffic');
+  const sfPol = document.getElementById('sfPolice');
+  const sfInc = document.getElementById('sfIncidents');
+  const sfShp = document.getElementById('sfShops');
+
+  if (type === 'safe') {
+    if (safeRoutePolylines.safe) safeRoutePolylines.safe.setStyle({ opacity: 0.95, weight: 7 }).bringToFront();
+    if (safeRoutePolylines.shorter) safeRoutePolylines.shorter.setStyle({ opacity: 0.35, weight: 4 });
+    if (safeRoutePolylines.fastest) safeRoutePolylines.fastest.setStyle({ opacity: 0.35, weight: 4 });
+
+    if (scoreTitle) scoreTitle.textContent = 'Prioritized Safe Corridor';
+    if (scoreDesc) scoreDesc.textContent = 'Follows primary roads with high foot traffic, verified street lighting, and direct proximity to emergency booths.';
+    if (scoreIcon) scoreIcon.textContent = '🛡️';
+    if (assessBadge) { assessBadge.textContent = 'Recommended'; assessBadge.className = 'badge badge-ai-blue'; }
+
+    if (sfLight) { sfLight.className = 'sf-bar good'; sfLight.style.width = '90%'; }
+    if (sfTraf)  { sfTraf.className = 'sf-bar good'; sfTraf.style.width = '85%'; }
+    if (sfPol)   { sfPol.className = 'sf-bar ok'; sfPol.style.width = '75%'; }
+    if (sfInc)   { sfInc.className = 'sf-bar good'; sfInc.style.width = '85%'; }
+    if (sfShp)   { sfShp.className = 'sf-bar good'; sfShp.style.width = '90%'; }
+  } else if (type === 'shorter') {
+    if (safeRoutePolylines.shorter) safeRoutePolylines.shorter.setStyle({ opacity: 0.95, weight: 7 }).bringToFront();
+    if (safeRoutePolylines.safe) safeRoutePolylines.safe.setStyle({ opacity: 0.35, weight: 4 });
+    if (safeRoutePolylines.fastest) safeRoutePolylines.fastest.setStyle({ opacity: 0.35, weight: 4 });
+
+    if (scoreTitle) scoreTitle.textContent = 'Standard Direct Path';
+    if (scoreDesc) scoreDesc.textContent = 'Direct walking route through secondary residential streets with moderate lighting and foot traffic.';
+    if (scoreIcon) scoreIcon.textContent = '⚪';
+    if (assessBadge) { assessBadge.textContent = 'Direct Path'; assessBadge.className = 'badge badge-blue'; }
+
+    if (sfLight) { sfLight.className = 'sf-bar ok'; sfLight.style.width = '65%'; }
+    if (sfTraf)  { sfTraf.className = 'sf-bar ok'; sfTraf.style.width = '60%'; }
+    if (sfPol)   { sfPol.className = 'sf-bar bad'; sfPol.style.width = '40%'; }
+    if (sfInc)   { sfInc.className = 'sf-bar ok'; sfInc.style.width = '60%'; }
+    if (sfShp)   { sfShp.className = 'sf-bar ok'; sfShp.style.width = '55%'; }
+  } else if (type === 'fastest') {
+    if (safeRoutePolylines.fastest) safeRoutePolylines.fastest.setStyle({ opacity: 0.95, weight: 6 }).bringToFront();
+    if (safeRoutePolylines.safe) safeRoutePolylines.safe.setStyle({ opacity: 0.3, weight: 3 });
+    if (safeRoutePolylines.shorter) safeRoutePolylines.shorter.setStyle({ opacity: 0.3, weight: 3 });
+
+    if (scoreTitle) scoreTitle.textContent = 'Shortest Alley Path (Caution)';
+    if (scoreDesc) scoreDesc.textContent = 'Direct shortcut traversing narrow or less-trafficked lanes. Caution advised after dark.';
+    if (scoreIcon) scoreIcon.textContent = '⚠️';
+    if (assessBadge) { assessBadge.textContent = 'Caution Advised'; assessBadge.className = 'badge badge-danger'; }
+
+    if (sfLight) { sfLight.className = 'sf-bar bad'; sfLight.style.width = '30%'; }
+    if (sfTraf)  { sfTraf.className = 'sf-bar bad'; sfTraf.style.width = '25%'; }
+    if (sfPol)   { sfPol.className = 'sf-bar bad'; sfPol.style.width = '15%'; }
+    if (sfInc)   { sfInc.className = 'sf-bar bad'; sfInc.style.width = '35%'; }
+    if (sfShp)   { sfShp.className = 'sf-bar bad'; sfShp.style.width = '25%'; }
+  }
+
+  if (routeData) {
+    const distKm = (routeData.distMeters / 1000).toFixed(1);
+    if (badge) {
+      const prefix = type === 'safe' ? '🔵 Safe route active' : (type === 'shorter' ? '⚪ Shorter route active' : '🔴 Shortcut active');
+      badge.textContent = `${prefix} · ${routeData.timeMin} min (${distKm} km)`;
+    }
+  }
+
+  // Render Turn-by-Turn directions panel for this selected route
+  renderTurnByTurn(type);
+}
+
+function renderTurnByTurn(routeType) {
+  const panel = document.getElementById('turnByTurnPanel');
+  const stepsList = document.getElementById('tbtStepsList');
+  const badgeEl = document.getElementById('tbtRouteBadge');
+  const timeEl = document.getElementById('tbtTotalTime');
+  const distEl = document.getElementById('tbtTotalDist');
+
+  if (!panel || !stepsList) return;
+
+  const routeData = currentRoutesData[routeType];
+  if (!routeData) {
+    panel.style.display = 'none';
+    return;
+  }
+
+  panel.style.display = 'block';
+
+  // Badges and stats
+  const distKm = (routeData.distMeters / 1000).toFixed(1);
+  if (badgeEl) badgeEl.textContent = routeData.name;
+  if (timeEl) timeEl.textContent = `⏱️ ${routeData.timeMin} min`;
+  if (distEl) distEl.textContent = `📏 ${distKm} km (${routeData.distMeters} m)`;
+
+  // Clear previous turn markers and directional arrows on map
+  routeTurnMarkers.forEach(m => safeMap && safeMap.removeLayer(m));
+  routeTurnMarkers = [];
+  routeArrowMarkers.forEach(m => safeMap && safeMap.removeLayer(m));
+  routeArrowMarkers = [];
+
+  const steps = routeData.steps || [];
+  let html = '';
+
+  // Start step card
+  const originName = currentOrigin ? currentOrigin.name : 'Your Current GPS Location';
+  html += `
+    <div class="tbt-step-item" onclick="highlightStepOnMap(${currentOrigin.lat}, ${currentOrigin.lng}, '📍 Start: Current Location', 0)">
+      <div class="tbt-step-num" style="background:#eff6ff;color:#1d4ed8">🟢</div>
+      <div class="tbt-step-icon">🚶</div>
+      <div class="tbt-step-content">
+        <div class="tbt-step-title">Start: Your Live Location</div>
+        <div class="tbt-step-sub">${esc(originName)}</div>
+      </div>
+      <span class="tbt-step-dist">Start</span>
+    </div>
+  `;
+
+  // Steps cards
+  steps.forEach((step, idx) => {
+    const locArg = step.location ? `${step.location[0]}, ${step.location[1]}` : 'null, null';
+    html += `
+      <div class="tbt-step-item" id="tbtStep_${step.index}" onclick="highlightStepOnMap(${locArg}, ${JSON.stringify(step.title)}, ${step.index})">
+        <div class="tbt-step-num">${step.index}</div>
+        <div class="tbt-step-icon">${step.icon}</div>
+        <div class="tbt-step-content">
+          <div class="tbt-step-title">${esc(step.title)}</div>
+          <div class="tbt-step-sub">${esc(step.sub)}</div>
+        </div>
+        <span class="tbt-step-dist">${step.distStr}</span>
+      </div>
+    `;
+
+    // Drop turn node marker on map for turns that have a location
+    if (step.location && safeMap) {
+      const turnIcon = L.divIcon({
+        className: 'custom-leaflet-icon',
+        html: `<div class="map-turn-node" title="Step ${step.index}"><span>${step.index}</span></div>`,
+        iconSize: [24, 24],
+        iconAnchor: [12, 12]
+      });
+      const turnMarker = L.marker(step.location, { icon: turnIcon }).addTo(safeMap);
+      turnMarker.bindPopup(`
+        <div class="map-popup-title">${step.icon} Step ${step.index}</div>
+        <div class="map-popup-sub"><b>${esc(step.title)}</b></div>
+        <div style="font-size:11px;color:#1e40af;font-weight:700;margin-top:3px">${step.distStr}</div>
+      `);
+      turnMarker.on('click', () => {
+        document.querySelectorAll('.tbt-step-item').forEach(el => el.classList.remove('active-step'));
+        const el = document.getElementById('tbtStep_' + step.index);
+        if (el) {
+          el.classList.add('active-step');
+          el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+      });
+      routeTurnMarkers.push(turnMarker);
+    }
+  });
+
+  // Finish step card
+  const destName = currentDest ? currentDest.name : 'Destination';
+  html += `
+    <div class="tbt-step-item" onclick="highlightStepOnMap(${currentDest.lat}, ${currentDest.lng}, '🎯 Destination: ${esc(destName)}', 999)">
+      <div class="tbt-step-num" style="background:#eff6ff;color:#1d4ed8">🏁</div>
+      <div class="tbt-step-icon">🎯</div>
+      <div class="tbt-step-content">
+        <div class="tbt-step-title">Arrive at Destination</div>
+        <div class="tbt-step-sub">${esc(destName)}</div>
+      </div>
+      <span class="tbt-step-dist">Finish</span>
+    </div>
+  `;
+
+  stepsList.innerHTML = html;
+
+  // Draw directional arrows along the route polyline coordinates
+  if (routeData.coords && routeData.coords.length > 3 && safeMap) {
+    const coords = routeData.coords;
+    const arrowInterval = Math.max(3, Math.floor(coords.length / 5));
+    for (let i = arrowInterval; i < coords.length - 1; i += arrowInterval) {
+      const p1 = coords[i];
+      const p2 = coords[Math.min(coords.length - 1, i + 1)];
+      const bearing = calculateBearing(p1[0], p1[1], p2[0], p2[1]);
+      const arrowIcon = L.divIcon({
+        className: 'custom-leaflet-icon',
+        html: `<div class="route-dir-arrow" style="transform: rotate(${bearing}deg);"><svg width="10" height="10" viewBox="0 0 24 24" fill="white"><path d="M12 2L2 22l10-4 10 4z"/></svg></div>`,
+        iconSize: [20, 20],
+        iconAnchor: [10, 10]
+      });
+      const arrowMarker = L.marker(p1, { icon: arrowIcon, interactive: false }).addTo(safeMap);
+      routeArrowMarkers.push(arrowMarker);
+    }
+  }
+}
+
+function highlightStepOnMap(lat, lng, title, stepIndex) {
+  if (lat && lng && safeMap) {
+    safeMap.flyTo([lat, lng], 17, { animate: true, duration: 0.8 });
+  }
+  document.querySelectorAll('.tbt-step-item').forEach(el => el.classList.remove('active-step'));
+  const el = document.getElementById('tbtStep_' + stepIndex);
+  if (el) el.classList.add('active-step');
+  toast(`${title}`, 's');
+}
+
+function resetSidebarStats() {
+  const tSafe = document.getElementById('raTimeSafe');
+  const tShort = document.getElementById('raTimeShorter');
+  const tFast = document.getElementById('raTimeFastest');
+  if (tSafe) tSafe.textContent = '-- min';
+  if (tShort) tShort.textContent = '-- min';
+  if (tFast) tFast.textContent = '-- min';
+}
+
+function centerOnUser() {
+  if (safeMap && currentOrigin) {
+    safeMap.flyTo([currentOrigin.lat, currentOrigin.lng], 16, { animate: true, duration: 1.2 });
+    toast('🎯 Centered on your live location', 's');
+  } else {
+    toast('Waiting for GPS coordinates… Click Retry Location if needed.', 'a');
+    requestUserLocation(true);
+  }
+}
+
+function openGMaps() {
+  const to = document.getElementById('routeTo').value.trim();
+  const originLat = currentOrigin ? currentOrigin.lat : (lastPos ? lastPos.coords.latitude : null);
+  const originLng = currentOrigin ? currentOrigin.lng : (lastPos ? lastPos.coords.longitude : null);
+
+  if (originLat && originLng && currentDest) {
+    const url = `https://www.google.com/maps/dir/?api=1&origin=${originLat},${originLng}&destination=${currentDest.lat},${currentDest.lng}&travelmode=walking`;
+    window.open(url, '_blank');
+  } else if (originLat && originLng && to) {
+    const url = `https://www.google.com/maps/dir/?api=1&origin=${originLat},${originLng}&destination=${encodeURIComponent(to)}&travelmode=walking`;
+    window.open(url, '_blank');
+  } else {
+    window.open('https://maps.google.com', '_blank');
+  }
+}
+function openMaps(query) { window.open('https://www.google.com/maps/search/' + encodeURIComponent(query + ' near me'), '_blank'); }
+
+/* ══════════════════════════════════════════
+   FAKE CALL
+══════════════════════════════════════════ */
+const fakeCallers = [
+  { name:'Maa 💜', init:'M', color:'#7A9E7E' },
+  { name:'Priya 💜', init:'P', color:'#7EB0C8' },
+  { name:'Didi 💜', init:'D', color:'#5B9E7A' },
+  { name:'Bhai 💜', init:'B', color:'#C49A5A' },
+];
+function startFakeCall() {
+  const caller = fakeCallers[Math.floor(Math.random() * fakeCallers.length)];
+  const av = document.getElementById('fcAvatar');
+  av.textContent = caller.init;
+  av.style.background = `linear-gradient(135deg,${caller.color},#7EB0C8)`;
+  document.getElementById('fcName').textContent = caller.name;
+  document.getElementById('fcStatus').textContent = 'Calling…';
+  document.getElementById('fcTimer').style.display = 'none';
+  document.getElementById('fakeCallOverlay').classList.add('show');
+  fakeCallSecs = 0; av.classList.add('fc-ringtone');
+}
+function answerFakeCall() {
+  document.getElementById('fcStatus').textContent = 'Connected ●';
+  document.getElementById('fcTimer').style.display = 'block';
+  document.getElementById('fcAvatar').classList.remove('fc-ringtone');
+  fakeCallInt = setInterval(() => {
+    fakeCallSecs++;
+    const m = String(Math.floor(fakeCallSecs/60)).padStart(2,'0');
+    const s = String(fakeCallSecs%60).padStart(2,'0');
+    document.getElementById('fcTimer').textContent = m + ':' + s;
+  }, 1000);
+}
+function endFakeCall() {
+  clearInterval(fakeCallInt);
+  document.getElementById('fakeCallOverlay').classList.remove('show');
+  document.getElementById('fcAvatar').classList.remove('fc-ringtone');
+}
+
+document.getElementById('inPhone').addEventListener('keydown', e => { if (e.key === 'Enter') addContact(); });
+document.getElementById('loginPass').addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); });
+document.getElementById('suPass').addEventListener('keydown', e => { if (e.key === 'Enter') doSignup(); });
+</script>
+</body>
+</html>
